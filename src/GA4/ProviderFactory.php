@@ -118,7 +118,7 @@ class ProviderFactory
             $request = $this->requestStack->getMainRequest();
             if ($request) {
                 $ua = $request->headers->get('User-Agent', '');
-                if ($ua !== null) {
+                if (null !== $ua) {
                     $analytics->setUserAgentOverride($ua);
                 }
 

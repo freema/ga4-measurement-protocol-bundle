@@ -26,13 +26,13 @@ class DefaultHttpClientTest extends TestCase
             ->getMock();
 
         $logger = $this->createMock(LoggerInterface::class);
-        
+
         // We'll test with a real MockHttpClient instead
         $mockResponse = new MockResponse('OK', ['http_code' => 200]);
         $mockHttpClient = new MockHttpClient($mockResponse);
-        
+
         $client = new DefaultHttpClient([], $logger);
-        
+
         // Use reflection to inject our mock HTTP client
         $reflectionProperty = new \ReflectionProperty(DefaultHttpClient::class, 'client');
         $reflectionProperty->setAccessible(true);
@@ -80,21 +80,21 @@ class DefaultHttpClientTest extends TestCase
         $exception = new TransportException('Connection error');
 
         // Create a mock HTTP client that throws an exception
-        $mockHttpClient = new MockHttpClient(function() use ($exception) {
+        $mockHttpClient = new MockHttpClient(function () use ($exception) {
             throw $exception;
         });
-        
+
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('error')
-            ->with('Failed to send GET request', $this->callback(function ($context) use ($exception) {
-                return isset($context['exception']) 
-                    && strpos($context['message'], 'Connection error') !== false
+            ->with('Failed to send GET request', $this->callback(function ($context) {
+                return isset($context['exception'])
+                    && false !== strpos($context['message'], 'Connection error')
                     && 'https://example.com' === $context['url'];
             }));
 
         $client = new DefaultHttpClient([], $logger);
-        
+
         // Use reflection to inject our mock HTTP client
         $reflectionProperty = new \ReflectionProperty(DefaultHttpClient::class, 'client');
         $reflectionProperty->setAccessible(true);

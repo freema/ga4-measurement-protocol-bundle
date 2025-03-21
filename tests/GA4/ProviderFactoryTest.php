@@ -187,7 +187,7 @@ class ProviderFactoryTest extends TestCase
             ->method('get')
             ->willReturnMap([
                 ['User-Agent', '', 'Test User Agent'],
-                ['Referer', null, 'https://referrer.com']
+                ['Referer', null, 'https://referrer.com'],
             ]);
 
         $this->requestStack->expects($this->once())

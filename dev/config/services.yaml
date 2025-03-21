@@ -1,0 +1,20 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  # logger disabled
+  # logger:
+  #  alias: 'monolog.logger'
+  #  public: true
+
+  # Demo controllers for testing
+  Freema\GA4MeasurementProtocolBundle\Dev\Controller\:
+    resource: '../Controller'
+    tags: ['controller.service_arguments']
+    
+  # Make the AnalyticsRegistryInterface public for easy access
+  Freema\GA4MeasurementProtocolBundle\Client\AnalyticsRegistryInterface:
+    alias: Freema\GA4MeasurementProtocolBundle\Client\AnalyticsRegistry
+    public: true

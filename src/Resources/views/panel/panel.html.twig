@@ -1,0 +1,83 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+
+    {% set icon %}
+        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+             viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+            <g>
+                <path style="fill:#ffffff;" class="st0" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
+		C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
+		c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
+		c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
+		c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
+		s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
+		L512,160.9z"/>
+            </g>
+        </svg>
+        <span class="sf-toolbar-value">
+            {{ collector.count }}
+        </span>
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 'link': true }) }}
+{% endblock %}
+
+
+{% block menu %}
+    <span class="label label-status-none ">
+        <span class="icon">
+            <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+                <g>
+                    <path style="fill:#ffffff;" class="st0" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
+            C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
+            c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
+            c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
+            c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
+            s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
+            L512,160.9z"/>
+                </g>
+            </svg>
+            </span>
+        <strong>GA</strong>
+        <span class="count">
+            <span>{{ collector.count }}</span>
+        </span>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>GA4 Measurement Protocol</h2>
+
+    <div class="tab-content">
+        <table class="logs" data-filters="">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Uri</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if collector.data is empty %}
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <strong class="text-bold">
+                            No data for this request
+                        </strong>
+                    </td>
+                </tr>
+            {% else %}
+                {% for key, data in collector.data %}
+                    <tr>
+                        <td class="text-bold">{{ key + 1 }}</td>
+                        <td>
+                            {{ data.uri }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

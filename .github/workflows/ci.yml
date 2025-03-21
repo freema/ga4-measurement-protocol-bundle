@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: PHP 8.2 - Symfony 7
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, pdo_sqlite
+          coverage: xdebug
+          tools: composer:v2, phpstan, php-cs-fixer
+
+      - name: Install dependencies
+        run: |
+          composer install --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: phpstan analyse src
+
+      - name: Run PHP CS Fixer
+        run: php-cs-fixer fix --dry-run --diff
+
+      - name: Setup test environment for Symfony 7
+        run: |
+          mkdir -p .symfony-test/
+          cp -r src tests .symfony-test/
+          cp phpunit.xml.dist .symfony-test/phpunit.xml
+          cp test/symfony71/composer.json .symfony-test/composer.json
+
+      - name: Install test dependencies
+        working-directory: .symfony-test
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        working-directory: .symfony-test
+        run: vendor/bin/phpunit

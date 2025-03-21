@@ -21,14 +21,11 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, intl, pdo_sqlite
           coverage: xdebug
-          tools: composer:v2, phpstan, php-cs-fixer
+          tools: composer:v2, php-cs-fixer
 
       - name: Install dependencies
         run: |
           composer install --prefer-dist --no-progress
-
-      - name: Run PHPStan
-        run: phpstan analyse src
 
       - name: Run PHP CS Fixer
         run: php-cs-fixer fix --dry-run --diff

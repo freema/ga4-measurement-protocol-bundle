@@ -18,7 +18,8 @@ class DefaultSessionIdHandler implements SessionIdHandler
         $request = $this->requestStack->getMainRequest();
         if (!$request) {
             $sid = session_id();
-            return $sid !== false ? $sid : null;
+
+            return false !== $sid ? $sid : null;
         }
 
         // Try to get GA session ID from cookies
@@ -35,7 +36,7 @@ class DefaultSessionIdHandler implements SessionIdHandler
         // If still not found, use session ID
         if (!$sessionId) {
             $sid = session_id();
-            $sessionId = $sid !== false ? $sid : null;
+            $sessionId = false !== $sid ? $sid : null;
         }
 
         return $sessionId;

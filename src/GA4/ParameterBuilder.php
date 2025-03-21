@@ -61,7 +61,7 @@ class ParameterBuilder
         $request = $this->requestStack->getCurrentRequest();
         if ($data->getDocumentPath()) {
             $host = $request?->getSchemeAndHttpHost() ?? '';
-            $queryParams['dl'] = $host . $data->getDocumentPath();
+            $queryParams['dl'] = $host.$data->getDocumentPath();
         }
 
         // Add event name

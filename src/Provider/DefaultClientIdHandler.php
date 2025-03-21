@@ -26,6 +26,6 @@ class DefaultClientIdHandler implements CustomClientIdHandler
             $clientId = '555'; // Anonymous Client ID.
         }
 
-        return (string)$clientId;
+        return (string) $clientId;
     }
 }

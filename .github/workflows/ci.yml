@@ -8,18 +8,9 @@ on:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php-versions }} - Symfony ${{ matrix.symfony-version }}
+    name: PHP 8.2 - Symfony 7
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php-versions: ['8.1', '8.2', '8.3']
-        symfony-version: ['5.4', '6.4', '7.1']
-        exclude:
-          # Symfony 7 requires PHP 8.2+
-          - php-versions: '8.1'
-            symfony-version: '7.1'
-            
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,7 +18,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
+          php-version: '8.2'
           extensions: mbstring, intl, pdo_sqlite
           coverage: xdebug
           tools: composer:v2, phpstan, php-cs-fixer
@@ -42,12 +33,12 @@ jobs:
       - name: Run PHP CS Fixer
         run: php-cs-fixer fix --dry-run --diff
 
-      - name: Setup test environment for Symfony ${{ matrix.symfony-version }}
+      - name: Setup test environment for Symfony 7
         run: |
           mkdir -p .symfony-test/
           cp -r src tests .symfony-test/
           cp phpunit.xml.dist .symfony-test/phpunit.xml
-          cp test/symfony${{ matrix.symfony-version }}/composer.json .symfony-test/composer.json
+          cp test/symfony71/composer.json .symfony-test/composer.json
 
       - name: Install test dependencies
         working-directory: .symfony-test

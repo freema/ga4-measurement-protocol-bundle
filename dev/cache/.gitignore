@@ -1,0 +1,3 @@
+# Dev cache files to ignore
+*
+!.gitignore

@@ -97,7 +97,7 @@ class ParameterBuilderTest extends TestCase
             ->method('buildProductParameter')
             ->willReturnMap([
                 [$product1, 'idSKU-1~nmProduct 1~pr10.99'],
-                [$product2, 'idSKU-2~nmProduct 2~pr20.99']
+                [$product2, 'idSKU-2~nmProduct 2~pr20.99'],
             ]);
 
         $result = $this->builder->buildParameters($this->data);

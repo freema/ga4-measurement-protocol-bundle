@@ -8,7 +8,11 @@
     "symfony/framework-bundle": "6.4.*",
     "symfony/yaml": "6.4.*",
     "symfony/console": "6.4.*",
-    "symfony/http-client": "6.4.*"
+    "symfony/http-client": "6.4.*",
+    "psr/http-client": "^1.0",
+    "psr/http-message": "^1.0",
+    "nyholm/psr7": "^1.5",
+    "php-http/discovery": "^1.14"
   },
   "require-dev": {
     "symfony/debug-bundle": "6.4.*",
@@ -25,7 +29,10 @@
     }
   },
   "config": {
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   },
   "prefer-stable": true
 }

@@ -13,10 +13,18 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+/**
+ * @group http-client
+ */
 class DefaultHttpClientTest extends TestCase
 {
+    /**
+     * @group http-client
+     */
     public function testGetSendsRequest(): void
     {
+        $this->markTestSkippedIfHttpClientDependenciesMissing();
+
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);
 
@@ -45,9 +53,13 @@ class DefaultHttpClientTest extends TestCase
 
     /**
      * @requires extension psr-http-client
+     *
+     * @group http-client
      */
     public function testGetWithRealMockResponse(): void
     {
+        $this->markTestSkippedIfHttpClientDependenciesMissing();
+
         $mockClient = new MockHttpClient([
             new MockResponse('OK', ['http_code' => 200]),
         ]);
@@ -75,8 +87,13 @@ class DefaultHttpClientTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $response);
     }
 
+    /**
+     * @group http-client
+     */
     public function testGetHandlesExceptions(): void
     {
+        $this->markTestSkippedIfHttpClientDependenciesMissing();
+
         $exception = new TransportException('Connection error');
 
         // Create a mock HTTP client that throws an exception
@@ -103,5 +120,23 @@ class DefaultHttpClientTest extends TestCase
         $result = $client->get('https://example.com');
 
         $this->assertNull($result);
+    }
+
+    /**
+     * Helper method to skip tests if HTTP client dependencies are missing.
+     */
+    private function markTestSkippedIfHttpClientDependenciesMissing(): void
+    {
+        if (!interface_exists(ResponseInterface::class)) {
+            $this->markTestSkipped('Missing psr/http-message package');
+        }
+
+        if (!class_exists(Psr18Client::class)) {
+            $this->markTestSkipped('Missing Symfony Psr18Client');
+        }
+
+        if (!class_exists(\Nyholm\Psr7\Response::class)) {
+            $this->markTestSkipped('Missing nyholm/psr7 package');
+        }
     }
 }

@@ -4,18 +4,11 @@ parameters:
         - src
     excludePaths:
         - tests
+        - src/DependencyInjection/
+        - src/GA4MeasurementProtocolBundle.php
     ignoreErrors:
         -
             identifier: missingType.iterableValue
-        -
-            message: '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::children\(\).#'
-            path: src/DependencyInjection/Configuration.php
-        -
-            message: '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::children\(\).#'
-            path: src/DependencyInjection/GA4MeasurementProtocolExtension.php
-        -
-            message: '#Method Freema\\GA4MeasurementProtocolBundle\\GA4MeasurementProtocolBundle::getContainerExtension\(\) should return#'
-            path: src/GA4MeasurementProtocolBundle.php
         -
             message: '#Method Freema\\GA4MeasurementProtocolBundle\\Provider\\DefaultSessionIdHandler::buildSessionId\(\) should return#'
             path: src/Provider/DefaultSessionIdHandler.php

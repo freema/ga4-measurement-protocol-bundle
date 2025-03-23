@@ -35,10 +35,20 @@ jobs:
           coverage: none
 
       - name: Install composer dependencies
-        run: composer install --no-interaction --no-progress
+        run: |
+          composer config --no-plugins allow-plugins.php-http/discovery true
+          composer install --no-interaction --no-progress
+
+      - name: Verify phpstan.neon exists
+        run: |
+          if [ ! -f phpstan.neon ]; then
+            echo "phpstan.neon does not exist!"
+            exit 1
+          fi
+          cat phpstan.neon
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse src --level=1
+        run: vendor/bin/phpstan analyse src -c phpstan.neon
 
   tests:
     name: Tests (PHP ${{ matrix.php-version }}, Symfony ${{ matrix.symfony-version }})
@@ -88,7 +98,9 @@ jobs:
 
       - name: Install test dependencies
         working-directory: .symfony-test
-        run: composer install --no-interaction --no-progress
+        run: |
+          composer config --no-plugins allow-plugins.php-http/discovery true
+          composer install --no-interaction --no-progress
 
       - name: Run tests
         working-directory: .symfony-test

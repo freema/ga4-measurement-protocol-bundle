@@ -44,6 +44,9 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
         $this->client = new Psr18Client($httpClient);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function get(string $url): ?ResponseInterface
     {
         try {
@@ -54,22 +57,70 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
                 $this->client->createRequest('GET', $url)
             );
 
-            if ($this->logger) {
-                $this->logger->debug('Request successful', [
-                    'status_code' => $response->getStatusCode(),
-                    'url' => $url,
-                ]);
-            }
+            $this->logger?->debug('Request successful', [
+                'status_code' => $response->getStatusCode(),
+                'url' => $url,
+            ]);
 
             return $response;
         } catch (ExceptionInterface|ClientExceptionInterface $e) {
+            $this->logger?->error('Failed to send GET request', [
+                'exception' => $e,
+                'message' => $e->getMessage(),
+                'url' => $url,
+            ]);
+
+            return null;
+        }
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function post(string $url, array $data, array $options = []): ?ResponseInterface
+    {
+        try {
             if ($this->logger) {
-                $this->logger->error('Failed to send GET request', [
-                    'exception' => $e,
-                    'message' => $e->getMessage(),
+                $this->logger->debug('Sending POST request', [
                     'url' => $url,
+                    'data' => $data,
+                    'options' => $options,
                 ]);
             }
+            
+            // Create request body with JSON content
+            $body = json_encode($data);
+            if ($body === false) {
+                throw new \InvalidArgumentException('Failed to JSON encode request data');
+            }
+            
+            // Create PSR-7 request with JSON body
+            $request = $this->client->createRequest('POST', $url)
+                ->withHeader('Content-Type', 'application/json')
+                ->withBody(\Nyholm\Psr7\Stream::create($body));
+            
+            // Add additional headers from options
+            if (isset($options['headers']) && is_array($options['headers'])) {
+                foreach ($options['headers'] as $name => $value) {
+                    $request = $request->withHeader($name, $value);
+                }
+            }
+            
+            // Send the request
+            $response = $this->client->sendRequest($request);
+
+            $this->logger?->debug('POST request successful', [
+                'status_code' => $response->getStatusCode(),
+                'url' => $url,
+            ]);
+
+            return $response;
+        } catch (ExceptionInterface|ClientExceptionInterface $e) {
+            $this->logger?->error('Failed to send POST request', [
+                'exception' => $e,
+                'message' => $e->getMessage(),
+                'url' => $url,
+            ]);
 
             return null;
         }

@@ -100,7 +100,8 @@ class GA4MeasurementProtocolExtension extends Extension
             $container
                 ->setDefinition(AnalyticsRegistry::class, new Definition(AnalyticsRegistry::class))
                 ->setArgument(0, $clientServiceKeys)
-                ->setArgument(1, new Reference(ProviderFactory::class));
+                ->setArgument(1, new Reference(ProviderFactory::class))
+                ->setArgument(2, new Reference(HttpClientFactoryInterface::class));
 
             $container->setAlias(AnalyticsRegistryInterface::class, new Alias(AnalyticsRegistry::class, true));
 
@@ -121,11 +122,6 @@ class GA4MeasurementProtocolExtension extends Extension
 
     private function registerBasicServices(ContainerBuilder $container, array $config): void
     {
-        // Register ProductParameterBuilder
-        $container
-            ->setDefinition(ProductParameterBuilder::class, new Definition(ProductParameterBuilder::class))
-            ->setPublic(false);
-
         // Get the global GA4 endpoint configuration
         $globalEndpoint = $config['ga4_endpoint'] ?? null;
 
@@ -133,14 +129,15 @@ class GA4MeasurementProtocolExtension extends Extension
         if (null !== $globalEndpoint) {
             $this->validateEndpoint($globalEndpoint, 'global');
         }
-
-        // Register ParameterBuilder with global endpoint
+        
+        // Register factories as services
         $container
-            ->setDefinition(ParameterBuilder::class, new Definition(ParameterBuilder::class))
-            ->setArgument(0, new Reference(ProductParameterBuilder::class))
-            ->setArgument(1, new Reference('request_stack'))
-            ->setArgument(2, $globalEndpoint)
-            ->setPublic(false);
+            ->register('ga4_measurement_protocol.factory.event', 'Freema\\GA4MeasurementProtocolBundle\\Factory\\EventFactory')
+            ->setPublic(true);
+            
+        $container
+            ->register('ga4_measurement_protocol.factory.request', 'Freema\\GA4MeasurementProtocolBundle\\Factory\\RequestFactory')
+            ->setPublic(true);
 
         // HTTP Client configuration
         $httpClientConfig = $config['http_client'] ?? [];
@@ -185,6 +182,10 @@ class GA4MeasurementProtocolExtension extends Extension
         $optionsNode = $node->children();
         $optionsNode->scalarNode('tracking_id')->isRequired()->end();
         $optionsNode->scalarNode('client_id')->end();
+        $optionsNode->scalarNode('secret_key')
+            ->defaultNull()
+            ->info('The API secret key for authenticating GA4 Measurement Protocol requests')
+            ->end();
 
         // Add ga4_endpoint configuration for individual clients
         $optionsNode->scalarNode('ga4_endpoint')

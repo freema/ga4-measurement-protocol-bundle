@@ -4,16 +4,28 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Tests\GA4;
 
-use Freema\GA4MeasurementProtocolBundle\GA4\AnalyticsGA4Data;
+use Freema\GA4MeasurementProtocolBundle\Dto\Event\CustomEvent;
+use Freema\GA4MeasurementProtocolBundle\Dto\Request\RequestDto;
+use Freema\GA4MeasurementProtocolBundle\Factory\EventFactory;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @deprecated This test is for the legacy AnalyticsGA4Data class which has been replaced by the DTO-based approach
+ */
 class AnalyticsGA4DataTest extends TestCase
 {
-    private AnalyticsGA4Data $data;
+    private EventFactory $eventFactory;
+    private CustomEvent $event;
+    private RequestDto $request;
 
     protected function setUp(): void
     {
-        $this->data = new AnalyticsGA4Data();
+        $this->markTestSkipped('AnalyticsGA4Data has been replaced by the DTO-based approach');
+        
+        // This code won't run as the test is skipped, but it shows the equivalent structure
+        $this->eventFactory = new EventFactory();
+        $this->event = $this->eventFactory->createCustomEvent('custom_event');
+        $this->request = new RequestDto();
     }
 
     public function testBasicProperties(): void

@@ -4,16 +4,25 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Tests\GA4;
 
-use Freema\GA4MeasurementProtocolBundle\GA4\ProductParameterBuilder;
+use Freema\GA4MeasurementProtocolBundle\Dto\Item\ItemDto;
+use Freema\GA4MeasurementProtocolBundle\Factory\EventFactory;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @deprecated This test class is for the legacy product parameter builder which has been replaced by ItemDto
+ */
 class ProductParameterBuilderTest extends TestCase
 {
-    private ProductParameterBuilder $builder;
+    private EventFactory $eventFactory;
+    private ItemDto $item;
 
     protected function setUp(): void
     {
-        $this->builder = new ProductParameterBuilder();
+        $this->markTestSkipped('The ProductParameterBuilder class has been replaced with the DTO-based approach using ItemDto');
+        
+        // This code is just for reference and won't be executed
+        $this->eventFactory = new EventFactory();
+        $this->item = $this->eventFactory->createItem();
     }
 
     public function testBuildProductParameterWithMinimalData(): void

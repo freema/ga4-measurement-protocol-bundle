@@ -8,6 +8,7 @@ use Freema\GA4MeasurementProtocolBundle\Client\AnalyticsRegistry;
 use Freema\GA4MeasurementProtocolBundle\Exception\ClientConfigKeyDontNotRegisteredException;
 use Freema\GA4MeasurementProtocolBundle\GA4\AnalyticsGA4;
 use Freema\GA4MeasurementProtocolBundle\GA4\ProviderFactory;
+use Freema\GA4MeasurementProtocolBundle\Http\HttpClientFactoryInterface;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomClientIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomUserIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\ProviderClientConfig;
@@ -18,21 +19,24 @@ use PHPUnit\Framework\TestCase;
 class AnalyticsRegistryTest extends TestCase
 {
     private ProviderFactory|MockObject $providerFactory;
+    private HttpClientFactoryInterface|MockObject $httpClientFactory;
     private AnalyticsRegistry $registry;
     private AnalyticsGA4|MockObject $analytics;
 
     protected function setUp(): void
     {
         $this->providerFactory = $this->createMock(ProviderFactory::class);
+        $this->httpClientFactory = $this->createMock(HttpClientFactoryInterface::class);
         $this->analytics = $this->createMock(AnalyticsGA4::class);
 
         $clientConfig = [
             'test_client' => [
                 'tracking_id' => 'G-TEST123',
+                'secret_key' => 'test-secret',
             ],
         ];
 
-        $this->registry = new AnalyticsRegistry($clientConfig, $this->providerFactory);
+        $this->registry = new AnalyticsRegistry($clientConfig, $this->providerFactory, $this->httpClientFactory);
     }
 
     public function testGetAnalyticsReturnsInstanceFromCache(): void
@@ -82,7 +86,7 @@ class AnalyticsRegistryTest extends TestCase
             }))
             ->willReturn($this->analytics);
 
-        $registry = new AnalyticsRegistry($clientConfig, $this->providerFactory);
+        $registry = new AnalyticsRegistry($clientConfig, $this->providerFactory, $this->httpClientFactory);
         $result = $registry->getAnalytics('custom_handlers');
 
         $this->assertSame($this->analytics, $result);

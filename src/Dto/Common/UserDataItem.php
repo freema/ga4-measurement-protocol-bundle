@@ -1,0 +1,81 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Freema\GA4MeasurementProtocolBundle\Dto\Common;
+
+use Freema\GA4MeasurementProtocolBundle\Dto\ExportableInterface;
+
+class UserDataItem implements ExportableInterface
+{
+    /**
+     * User property name
+     * @var string
+     */
+    protected ?string $name;
+
+    /**
+     * User property value
+     * @var mixed
+     */
+    protected $value;
+
+    /**
+     * UserDataItem constructor.
+     *
+     * @param string|null $name
+     * @param mixed $value
+     */
+    public function __construct(?string $name = null, $value = null)
+    {
+        $this->name = $name;
+        $this->value = $value;
+    }
+
+    public function export() : array
+    {
+        $value = $this->getValue() instanceof ExportableInterface
+            ? $this->getValue()->export()
+            : $this->getValue();
+
+        return [
+            $this->getName() => $value,
+        ];
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getName() : ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param string|null $name
+     * @return $this
+     */
+    public function setName(?string $name): self
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * @param mixed $value
+     * @return $this
+     */
+    public function setValue($value): self
+    {
+        $this->value = $value;
+        return $this;
+    }
+}

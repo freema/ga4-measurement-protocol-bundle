@@ -55,15 +55,16 @@
             <thead>
             <tr>
                 <th>#</th>
-                <th>Uri</th>
+                <th>URL</th>
+                <th>Payload</th>
             </tr>
             </thead>
             <tbody>
             {% if collector.data is empty %}
                 <tr>
-                    <td colspan="2" class="text-center">
+                    <td colspan="3" class="text-center">
                         <strong class="text-bold">
-                            No data for this request
+                            No GA4 requests for this page
                         </strong>
                     </td>
                 </tr>
@@ -74,10 +75,28 @@
                         <td>
                             {{ data.uri }}
                         </td>
+                        <td>
+                            <div class="json-pretty" id="ga-payload-{{ key }}">
+                                {{ data.payload|json_encode(constant('JSON_PRETTY_PRINT'))|nl2br }}
+                            </div>
+                        </td>
                     </tr>
                 {% endfor %}
             {% endif %}
             </tbody>
         </table>
     </div>
+    
+    <style>
+        .json-pretty {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f7f7f7;
+            padding: 8px;
+            border-radius: 4px;
+        }
+    </style>
 {% endblock %}

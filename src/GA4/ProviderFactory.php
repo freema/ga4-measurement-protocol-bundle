@@ -16,6 +16,9 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * Factory for creating AnalyticsGA4 instances.
+ */
 class ProviderFactory
 {
     private RequestStack $requestStack;
@@ -44,25 +47,28 @@ class ProviderFactory
         $this->defaultSessionIdHandler = $defaultSessionIdHandler;
     }
 
+    /**
+     * Create a new AnalyticsGA4 instance for a provider configuration.
+     */
     public function create(ProviderClientConfig $config): AnalyticsGA4
     {
-        // Create dependencies
-        $productBuilder = new ProductParameterBuilder();
-        $parameterBuilder = new ParameterBuilder($productBuilder, $this->requestStack);
-
         try {
             // Create HTTP client
             $httpClient = $this->httpClientFactory->createHttpClient($this->httpClientConfig);
 
-            // Create the analytics object
+            // Create the analytics object with the new structure
             $analytics = new AnalyticsGA4(
-                $parameterBuilder,
                 $httpClient,
                 $this->eventDispatcher,
                 $this->logger
             );
 
-            // Configure the analytics object
+            // Set API Secret if available
+            if ($config->getSecretKey()) {
+                $analytics->setApiSecret($config->getSecretKey());
+            }
+
+            // Configure the tracking ID
             $analytics->setTrackingId($config->getTrackingId());
 
             // Client ID handling logic
@@ -114,7 +120,7 @@ class ProviderFactory
                 }
             }
 
-            // Set the user agent
+            // Set the user agent and referrer
             $request = $this->requestStack->getMainRequest();
             if ($request) {
                 $ua = $request->headers->get('User-Agent', '');
@@ -127,6 +133,15 @@ class ProviderFactory
                 if ($referrer) {
                     $analytics->setDocumentReferrer($referrer);
                 }
+                
+                // Set document path
+                $documentPath = $request->getPathInfo();
+                if ($documentPath) {
+                    $analytics->setDocumentPath($documentPath);
+                }
+                
+                // Set document title (simplified)
+                $analytics->setDocumentTitle($request->getPathInfo());
             }
 
             return $analytics;

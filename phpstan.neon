@@ -9,6 +9,3 @@ parameters:
     ignoreErrors:
         -
             identifier: missingType.iterableValue
-        -
-            message: '#Method Freema\\GA4MeasurementProtocolBundle\\Provider\\DefaultSessionIdHandler::buildSessionId\(\) should return#'
-            path: src/Provider/DefaultSessionIdHandler.php

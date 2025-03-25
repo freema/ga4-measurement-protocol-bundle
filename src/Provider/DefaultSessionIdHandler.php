@@ -17,28 +17,39 @@ class DefaultSessionIdHandler implements SessionIdHandler
     {
         $request = $this->requestStack->getMainRequest();
         if (!$request) {
-            $sid = session_id();
-
-            return false !== $sid ? $sid : null;
+            return null;
         }
 
-        // Try to get GA session ID from cookies
-        $sessionId = $request->cookies->get('_ga_session_id');
-
-        // If not found, try to extract from _ga cookie
-        if (!$sessionId) {
-            $gaCookie = $request->cookies->get('_ga');
-            if ($gaCookie && is_string($gaCookie) && preg_match('/\d+\.\d+$/', $gaCookie, $matches)) {
-                $sessionId = $matches[0];
+        // Get all cookies
+        $cookies = [];
+        $cookieHeader = $request->headers->get('cookie');
+        if ($cookieHeader) {
+            $cookieParts = explode('; ', $cookieHeader);
+            foreach ($cookieParts as $cookie) {
+                if (false !== strpos($cookie, '=')) {
+                    list($name, $value) = explode('=', $cookie, 2);
+                    $cookies[$name] = $value;
+                }
             }
         }
 
-        // If still not found, use session ID
-        if (!$sessionId) {
-            $sid = session_id();
-            $sessionId = false !== $sid ? $sid : null;
+        // Extract client ID from _ga cookie (opravil jsem '_ga' místo '*ga')
+        if (isset($cookies['_ga'])) {
+            $gaCookieValue = $cookies['_ga'];
+            $gaParts = explode('.', $gaCookieValue);
+
+            // Format is GA1.2.XXXXXXXXXX.YYYYYYYYYY
+            if (count($gaParts) >= 4) {
+                return $gaParts[count($gaParts) - 2].'.'.$gaParts[count($gaParts) - 1];
+            }
         }
 
-        return $sessionId;
+        // If no _ga cookie or invalid format, fall back to session ID or anonymous ID
+        $sessionId = session_id();
+        if (!empty($sessionId)) {
+            return $sessionId;
+        }
+
+        return null;
     }
 }

@@ -2,6 +2,11 @@
 
 This bundle provides a clean, object-oriented integration with Google Analytics 4 Measurement Protocol for Symfony applications. It uses an event-based approach to track page views, purchases, and custom events in GA4.
 
+## Requirements
+
+- PHP 8.1 or higher
+- Symfony 5.4 or 6.4
+
 ## Installation
 
 ```bash

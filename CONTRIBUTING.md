@@ -89,8 +89,10 @@ task test:all
 # Run tests for specific Symfony versions
 task test:symfony54
 task test:symfony64
-task test:symfony71
+task test:symfony71  # Requires PHP 8.2+
 ```
+
+Note: Testing with Symfony 7.1 requires PHP 8.2 or higher. The main bundle is compatible with PHP 8.1 using Symfony 5.4 or 6.4.
 
 ## Coding Standards
 

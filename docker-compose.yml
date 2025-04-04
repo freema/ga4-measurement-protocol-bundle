@@ -1,7 +1,7 @@
 services:
   php:
     container_name: ga4-measurement-protocol-bundle-php
-    image: php:8.1-cli
+    image: php:8.2-cli
     ports:
       - "8080:8080"
     volumes:

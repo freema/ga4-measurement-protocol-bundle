@@ -20,34 +20,38 @@ class DefaultClientIdHandler implements CustomClientIdHandler
             return null;
         }
 
-        // Get all cookies
-        $cookies = [];
-        $cookieHeader = $request->headers->get('cookie');
-        if ($cookieHeader) {
-            $cookieParts = explode('; ', $cookieHeader);
-            foreach ($cookieParts as $cookie) {
-                if (false !== strpos($cookie, '=')) {
-                    list($name, $value) = explode('=', $cookie, 2);
-                    $cookies[$name] = $value;
+        if ($request->cookies->has('_ga')) {
+            $gaCookie = $request->cookies->get('_ga');
+            $gaCookie = (string) $gaCookie;
+            $parts = explode('.', $gaCookie);
+
+            // GA cookie format is typically GA1.2.XXXXXXXXXX.YYYYYYYYYY
+            // We need the last two parts to form the client ID
+            if (count($parts) >= 3) {
+                return $parts[count($parts) - 2].'.'.$parts[count($parts) - 1];
+            }
+        }
+
+        // If _ga cookie wasn't found or had invalid format, try session ID if available
+        if (PHP_SESSION_ACTIVE === session_status()) {
+            $sessionId = session_id();
+            if (!empty($sessionId)) {
+                // Make sure it's formatted properly for GA (numbers only)
+                $cleanSessionId = preg_replace('/[^0-9]/', '', $sessionId);
+                $cleanSessionId = (string) $cleanSessionId;
+                if (strlen($cleanSessionId) > 0) {
+                    return substr($cleanSessionId, 0, 10).'.'.time();
                 }
             }
         }
 
-        // Extract client ID from _ga cookie - always take the last part
-        if (isset($cookies['_ga'])) {
-            $gaCookieValue = $cookies['_ga'];
-            $gaParts = explode('.', $gaCookieValue);
-
-            // Check if array is not empty before accessing last element
-            return $gaParts[array_key_last($gaParts)];
-        }
-
-        // If no _ga cookie or invalid format, fall back to session ID or anonymous ID
-        $sessionId = session_id();
-        if (!empty($sessionId)) {
-            return $sessionId;
-        }
-
-        return '555'; // Anonymous Client ID
+        // If all else fails, generate a UUID-like string
+        return sprintf(
+            '%04x%04x.%04x%04x',
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF)
+        );
     }
 }

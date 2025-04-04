@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Client;
 
-use Freema\GA4MeasurementProtocolBundle\GA4\AnalyticsGA4;
+use Freema\GA4MeasurementProtocolBundle\Analytics\AnalyticsClientInterface;
 
+/**
+ * Service for retrieving analytics clients by key.
+ */
 interface AnalyticsRegistryInterface
 {
-    public function getAnalytics(string $key): AnalyticsGA4;
+    /**
+     * Get an analytics client by key.
+     */
+    public function getClient(string $key): AnalyticsClientInterface;
 }

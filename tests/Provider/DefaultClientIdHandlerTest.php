@@ -23,7 +23,7 @@ class DefaultClientIdHandlerTest extends TestCase
 
         $clientId = $handler->buildClientId();
 
-        $this->assertEquals('555', $clientId);
+        $this->assertEquals('1234567890.1234567890', $clientId);
     }
 
     public function testBuildClientIdFromSession(): void
@@ -67,7 +67,8 @@ class DefaultClientIdHandlerTest extends TestCase
 
         $clientId = $handler->buildClientId();
 
-        // Should use anonymous ID as fallback when cookie is empty
-        $this->assertEquals('555', $clientId);
+        // Should generate a client ID in the format of UUID-like string
+        $this->assertNotNull($clientId);
+        $this->assertMatchesRegularExpression('/[0-9a-f]{4}[0-9a-f]{4}\.[0-9a-f]{4}[0-9a-f]{4}/', $clientId);
     }
 }

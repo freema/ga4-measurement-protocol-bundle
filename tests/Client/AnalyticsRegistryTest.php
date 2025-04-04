@@ -41,9 +41,9 @@ class AnalyticsRegistryTest extends TestCase
         ];
 
         $this->registry = new AnalyticsRegistry(
-            $serviceMap, 
-            $this->httpClient, 
-            $this->eventDispatcher, 
+            $serviceMap,
+            $this->httpClient,
+            $this->eventDispatcher,
             $this->requestStack,
             $this->defaultClientIdHandler
         );
@@ -91,10 +91,10 @@ class AnalyticsRegistryTest extends TestCase
         ];
 
         $registry = new AnalyticsRegistry(
-            $serviceMap, 
-            $this->httpClient, 
-            $this->eventDispatcher, 
-            $this->requestStack, 
+            $serviceMap,
+            $this->httpClient,
+            $this->eventDispatcher,
+            $this->requestStack,
             $this->defaultClientIdHandler,
             $userIdHandler,
             $logger,

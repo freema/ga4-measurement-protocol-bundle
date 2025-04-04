@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Provider;
 
-interface SessionIdHandler
+interface CustomSessionIdHandler
 {
     public function buildSessionId(): ?string;
 }

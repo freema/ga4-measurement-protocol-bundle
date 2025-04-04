@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Freema\GA4MeasurementProtocolBundle\Dev\Controller;
 
 use Freema\GA4MeasurementProtocolBundle\Client\AnalyticsRegistryInterface;
+use Freema\GA4MeasurementProtocolBundle\Domain\Item;
+use Freema\GA4MeasurementProtocolBundle\Event\CustomEvent;
+use Freema\GA4MeasurementProtocolBundle\Event\Ecommerce\PurchaseEvent;
+use Freema\GA4MeasurementProtocolBundle\Event\PageViewEvent;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,19 +17,33 @@ use Symfony\Component\Routing\Annotation\Route;
 class DemoController extends AbstractController
 {
     public function __construct(
-        private AnalyticsRegistryInterface $analyticsRegistry,
+        private readonly AnalyticsRegistryInterface $analyticsRegistry,
     ) {
     }
 
     #[Route('/', name: 'ga4_demo_index')]
     public function index(): Response
     {
-        $analytics = $this->analyticsRegistry->getAnalytics('dev');
+        // Get the client for the 'dev' configuration
+        $client = $this->analyticsRegistry->getClient('dev');
         
-        // Send a pageview for the demo page
-        $analytics->setDocumentPath('/');
-        $analytics->setDocumentTitle('GA4 Demo Page');
-        $url = $analytics->sendPageview();
+        // Create a page view event
+        $pageViewEvent = new PageViewEvent();
+        $pageViewEvent->setDocumentPath('/');
+        $pageViewEvent->setDocumentTitle('GA4 Demo Page');
+        $pageViewEvent->setDocumentReferrer('');
+        
+        // Add the event to the client
+        $client->addEvent($pageViewEvent);
+        
+        try {
+            // Send the event
+            $analyticsUrl = $client->send();
+            $error = null;
+        } catch (\Exception $e) {
+            $analyticsUrl = null;
+            $error = $e->getMessage();
+        }
         
         return new Response(
             '<!DOCTYPE html>
@@ -49,8 +67,31 @@ class DemoController extends AbstractController
                     <div class="card">
                         <h2>Page View Event Sent</h2>
                         <p>A page view event was automatically sent when this page loaded.</p>
-                        <div class="code">' . htmlspecialchars($url) . '</div>
+                        ' . ($error ? '<div class="error" style="color: #721c24; background-color: #f8d7da; padding: 15px; border-radius: 4px; margin-bottom: 20px;"><strong>Error:</strong> ' . htmlspecialchars($error) . '</div>' : '') . '
+                        <div class="code">' . ($analyticsUrl ? htmlspecialchars($analyticsUrl->getUrl()) : 'No URL available due to error') . '</div>
                     </div>
+                    
+                    ' . ($analyticsUrl ? '
+                    <div class="card">
+                        <h2>Response Details</h2>
+                        <h3>Status Code</h3>
+                        <div class="code">' . htmlspecialchars((string)$analyticsUrl->getStatusCode()) . '</div>
+                        
+                        <h3>Response Content</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getResponseContent() ?? 'No response content') . '</div>
+                        
+                        <h3>Raw JSON</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getRawJson() ?? 'No raw JSON available') . '</div>
+                        
+                        <h3>Debug Info</h3>
+                        <div class="code">' . htmlspecialchars(json_encode($analyticsUrl->getDebugInfo() ?? [], JSON_PRETTY_PRINT)) . '</div>
+                        
+                        <h3>Event Count</h3>
+                        <div>Total events sent: ' . $analyticsUrl->getEventCount() . '</div>
+                        
+                        <h3>Event Names</h3>
+                        <div class="code">' . implode(', ', $analyticsUrl->getEventNames()) . '</div>
+                    </div>' : '') . '
                     
                     <div class="card">
                         <h2>Test Events</h2>
@@ -78,28 +119,38 @@ class DemoController extends AbstractController
     #[Route('/purchase', name: 'ga4_demo_purchase')]
     public function purchase(): Response
     {
-        $analytics = $this->analyticsRegistry->getAnalytics('dev');
+        // Get the client for the 'dev' configuration
+        $client = $this->analyticsRegistry->getClient('dev');
         $orderId = 'ORDER-' . rand(1000, 9999);
         
-        // Set up a purchase event
-        $analytics->setDocumentPath('/purchase');
-        $analytics->setDocumentTitle('GA4 Purchase Demo');
-        $analytics->setProductActionToPurchase();
-        $analytics->setTransactionId($orderId);
-        $analytics->setRevenue(99.99);
-        $analytics->setTax(19.99);
-        $analytics->setShipping(4.99);
+        // Create a purchase event
+        $purchaseEvent = new PurchaseEvent();
+        $purchaseEvent->setTransactionId($orderId);
+        $purchaseEvent->setValue(99.99);
+        $purchaseEvent->setCurrency('USD');
+        $purchaseEvent->setTax(19.99);
+        $purchaseEvent->setShipping(4.99);
         
-        // Add a product
-        $analytics->addProduct([
-            'sku' => 'SKU-123', 
-            'name' => 'Test Product', 
-            'price' => 99.99,
-            'quantity' => 1,
-            'brand' => 'Test Brand'
-        ]);
+        // Create a product item
+        $item = new Item();
+        $item->setItemId('SKU-123');
+        $item->setItemName('Test Product');
+        $item->setPrice(99.99);
+        $item->setQuantity(1);
+        $item->setItemBrand('Test Brand');
         
-        $url = $analytics->sendEvent();
+        // Add the item to the purchase event
+        $purchaseEvent->addItem($item);
+        
+        try {
+            // Add the event to the client and send
+            $client->addValidatedEvent($purchaseEvent);
+            $analyticsUrl = $client->send();
+            $error = null;
+        } catch (\Exception $e) {
+            $analyticsUrl = null;
+            $error = $e->getMessage();
+        }
         
         return new Response(
             '<!DOCTYPE html>
@@ -121,9 +172,10 @@ class DemoController extends AbstractController
                 <div class="container">
                     <h1>Purchase Event</h1>
                     
-                    <div class="success">
-                        <strong>Success!</strong> Purchase event has been sent to GA4.
-                    </div>
+                    ' . ($error 
+                        ? '<div class="error" style="color: #721c24; background-color: #f8d7da; padding: 15px; border-radius: 4px; margin-bottom: 20px;"><strong>Error:</strong> ' . htmlspecialchars($error) . '</div>'
+                        : '<div class="success"><strong>Success!</strong> Purchase event has been sent to GA4.</div>'
+                    ) . '
                     
                     <div class="card">
                         <h2>Event Details</h2>
@@ -138,8 +190,30 @@ class DemoController extends AbstractController
                     
                     <div class="card">
                         <h2>Request URL</h2>
-                        <div class="code">' . htmlspecialchars($url) . '</div>
+                        <div class="code">' . ($analyticsUrl ? htmlspecialchars($analyticsUrl->getUrl()) : 'No URL available due to error') . '</div>
                     </div>
+                    
+                    ' . ($analyticsUrl ? '
+                    <div class="card">
+                        <h2>Response Details</h2>
+                        <h3>Status Code</h3>
+                        <div class="code">' . htmlspecialchars((string)$analyticsUrl->getStatusCode()) . '</div>
+                        
+                        <h3>Response Content</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getResponseContent() ?? 'No response content') . '</div>
+                        
+                        <h3>Raw JSON</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getRawJson() ?? 'No raw JSON available') . '</div>
+                        
+                        <h3>Debug Info</h3>
+                        <div class="code">' . htmlspecialchars(json_encode($analyticsUrl->getDebugInfo() ?? [], JSON_PRETTY_PRINT)) . '</div>
+                        
+                        <h3>Event Count</h3>
+                        <div>Total events sent: ' . $analyticsUrl->getEventCount() . '</div>
+                        
+                        <h3>Event Names</h3>
+                        <div class="code">' . implode(', ', $analyticsUrl->getEventNames()) . '</div>
+                    </div>' : '') . '
                     
                     <p><a href="/" class="button">Back to Homepage</a></p>
                 </div>
@@ -151,17 +225,26 @@ class DemoController extends AbstractController
     #[Route('/custom-event', name: 'ga4_demo_custom_event')]
     public function customEvent(): Response
     {
-        $analytics = $this->analyticsRegistry->getAnalytics('dev');
+        // Get the client for the 'dev' configuration
+        $client = $this->analyticsRegistry->getClient('dev');
         
-        // Set up a custom event
-        $analytics->setDocumentPath('/custom-event');
-        $analytics->setDocumentTitle('GA4 Custom Event Demo');
-        $analytics->setEventName('button_click');
-        $analytics->addCustomParameter('ep.event_category', 'engagement');
-        $analytics->addCustomParameter('ep.event_label', 'demo_button');
-        $analytics->addCustomParameter('ep.value', '1');
+        // Create a custom event
+        $customEvent = new CustomEvent('button_click');
+        $customEvent->setDocumentPath('/custom-event');
+        $customEvent->setDocumentTitle('GA4 Custom Event Demo');
+        $customEvent->addParameter('event_category', 'engagement');
+        $customEvent->addParameter('event_label', 'demo_button');
+        $customEvent->addParameter('value', 1);
         
-        $url = $analytics->sendEvent();
+        try {
+            // Add the event to the client and send
+            $client->addEvent($customEvent);
+            $analyticsUrl = $client->send();
+            $error = null;
+        } catch (\Exception $e) {
+            $analyticsUrl = null;
+            $error = $e->getMessage();
+        }
         
         return new Response(
             '<!DOCTYPE html>
@@ -183,9 +266,10 @@ class DemoController extends AbstractController
                 <div class="container">
                     <h1>Custom Event</h1>
                     
-                    <div class="success">
-                        <strong>Success!</strong> Custom event has been sent to GA4.
-                    </div>
+                    ' . ($error 
+                        ? '<div class="error" style="color: #721c24; background-color: #f8d7da; padding: 15px; border-radius: 4px; margin-bottom: 20px;"><strong>Error:</strong> ' . htmlspecialchars($error) . '</div>'
+                        : '<div class="success"><strong>Success!</strong> Custom event has been sent to GA4.</div>'
+                    ) . '
                     
                     <div class="card">
                         <h2>Event Details</h2>
@@ -199,8 +283,30 @@ class DemoController extends AbstractController
                     
                     <div class="card">
                         <h2>Request URL</h2>
-                        <div class="code">' . htmlspecialchars($url) . '</div>
+                        <div class="code">' . ($analyticsUrl ? htmlspecialchars($analyticsUrl->getUrl()) : 'No URL available due to error') . '</div>
                     </div>
+                    
+                    ' . ($analyticsUrl ? '
+                    <div class="card">
+                        <h2>Response Details</h2>
+                        <h3>Status Code</h3>
+                        <div class="code">' . htmlspecialchars((string)$analyticsUrl->getStatusCode()) . '</div>
+                        
+                        <h3>Response Content</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getResponseContent() ?? 'No response content') . '</div>
+                        
+                        <h3>Raw JSON</h3>
+                        <div class="code">' . htmlspecialchars($analyticsUrl->getRawJson() ?? 'No raw JSON available') . '</div>
+                        
+                        <h3>Debug Info</h3>
+                        <div class="code">' . htmlspecialchars(json_encode($analyticsUrl->getDebugInfo() ?? [], JSON_PRETTY_PRINT)) . '</div>
+                        
+                        <h3>Event Count</h3>
+                        <div>Total events sent: ' . $analyticsUrl->getEventCount() . '</div>
+                        
+                        <h3>Event Names</h3>
+                        <div class="code">' . implode(', ', $analyticsUrl->getEventNames()) . '</div>
+                    </div>' : '') . '
                     
                     <p><a href="/" class="button">Back to Homepage</a></p>
                 </div>
@@ -212,48 +318,74 @@ class DemoController extends AbstractController
     #[Route('/api/pageview', name: 'ga4_api_pageview')]
     public function apiPageview(): JsonResponse
     {
-        $analytics = $this->analyticsRegistry->getAnalytics('dev');
+        // Get the client for the 'dev' configuration
+        $client = $this->analyticsRegistry->getClient('dev');
         
-        // Send a pageview
-        $analytics->setDocumentPath('/api/page');
-        $analytics->setDocumentTitle('API Pageview');
-        $url = $analytics->sendPageview();
+        // Create a page view event
+        $pageViewEvent = new PageViewEvent();
+        $pageViewEvent->setDocumentPath('/api/page');
+        $pageViewEvent->setDocumentTitle('API Pageview');
         
-        return new JsonResponse([
-            'success' => true,
-            'event_type' => 'pageview',
-            'request_url' => $url
-        ]);
+        try {
+            // Add the event to the client and send
+            $client->addEvent($pageViewEvent);
+            $analyticsUrl = $client->send();
+            
+            return new JsonResponse([
+                'success' => true,
+                'event_type' => 'pageview',
+                'request_url' => $analyticsUrl->getUrl()
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'event_type' => 'pageview',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
     
     #[Route('/api/purchase', name: 'ga4_api_purchase')]
     public function apiPurchase(): JsonResponse
     {
-        $analytics = $this->analyticsRegistry->getAnalytics('dev');
+        // Get the client for the 'dev' configuration
+        $client = $this->analyticsRegistry->getClient('dev');
         $orderId = 'API-' . rand(1000, 9999);
         
-        // Set up a purchase event
-        $analytics->setDocumentPath('/api/purchase');
-        $analytics->setDocumentTitle('API Purchase');
-        $analytics->setProductActionToPurchase();
-        $analytics->setTransactionId($orderId);
-        $analytics->setRevenue(49.99);
+        // Create a purchase event
+        $purchaseEvent = new PurchaseEvent();
+        $purchaseEvent->setTransactionId($orderId);
+        $purchaseEvent->setValue(49.99);
+        $purchaseEvent->setCurrency('USD');
         
-        // Add a product
-        $analytics->addProduct([
-            'sku' => 'API-PROD-1', 
-            'name' => 'API Test Product', 
-            'price' => 49.99,
-            'quantity' => 1,
-        ]);
+        // Create a product item
+        $item = new Item();
+        $item->setItemId('API-PROD-1');
+        $item->setItemName('API Test Product');
+        $item->setPrice(49.99);
+        $item->setQuantity(1);
         
-        $url = $analytics->sendEvent();
+        // Add the item to the purchase event
+        $purchaseEvent->addItem($item);
         
-        return new JsonResponse([
-            'success' => true,
-            'event_type' => 'purchase',
-            'transaction_id' => $orderId,
-            'request_url' => $url
-        ]);
+        try {
+            // Add the event to the client and send
+            $client->addValidatedEvent($purchaseEvent);
+            $analyticsUrl = $client->send();
+            
+            return new JsonResponse([
+                'success' => true,
+                'event_type' => 'purchase',
+                'transaction_id' => $orderId,
+                'request_url' => $analyticsUrl->getUrl()
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'event_type' => 'purchase',
+                'transaction_id' => $orderId,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

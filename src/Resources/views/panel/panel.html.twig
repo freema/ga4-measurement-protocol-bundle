@@ -1,23 +1,32 @@
 {% extends '@WebProfiler/Profiler/layout.html.twig' %}
 
 {% block toolbar %}
-
     {% set icon %}
-        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-             viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
-            <g>
-                <path style="fill:#ffffff;" class="st0" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
-		C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
-		c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
-		c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
-		c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
-		s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
-		L512,160.9z"/>
-            </g>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
+            <path style="fill:#ffffff;" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
+                C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
+                c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
+                c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
+                c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
+                s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
+                L512,160.9z"/>
         </svg>
         <span class="sf-toolbar-value">
             {{ collector.count }}
         </span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>GA4 Requests</b>
+            <span class="sf-toolbar-status">{{ collector.count }}</span>
+        </div>
+        {% if collector.count > 0 %}
+            <div class="sf-toolbar-info-piece">
+                <b>Total Events</b>
+                <span class="sf-toolbar-status">{{ collector.totalEvents }}</span>
+            </div>
+        {% endif %}
     {% endset %}
 
     {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 'link': true }) }}
@@ -25,22 +34,19 @@
 
 
 {% block menu %}
-    <span class="label label-status-none ">
+    <span class="label {{ collector.count > 0 ? 'label-status-success' : 'label-status-none' }}">
         <span class="icon">
-            <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-                 viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
-                <g>
-                    <path style="fill:#ffffff;" class="st0" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
-            C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
-            c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
-            c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
-            c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
-            s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
-            L512,160.9z"/>
-                </g>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
+                <path style="fill:{{ collector.count ? '#ffffff' : '#999' }};" d="M512,466.8c0,24.9-20.3,45.2-45.2,45.2H45.2C20.4,512,0,491.6,0,466.8V45.2C0,20.4,20.4,0,45.2,0h421.6
+                    C491.7,0,512,20.4,512,45.2V466.8z M512,160.9l-46.2-31.1c0.9-4,1.5-8.1,1.5-12.4c0-30-24.3-54.4-54.4-54.4
+                    c-30.1,0-54.4,24.3-54.4,54.4c0,11.8,3.8,22.7,10.2,31.7l-100,152.9c-4.1-1-8.3-1.6-12.7-1.6c-13.4,0-25.6,4.9-35.1,12.9L154,274.6
+                    c0.4-2.5,0.6-5,0.6-7.5c0-30-24.3-54.4-54.4-54.4s-54.4,24.3-54.4,54.4c0,7.4,1.5,14.6,4.2,21L0,334.5v49.3L74.2,315
+                    c7.7,4.2,16.5,6.5,25.9,6.5c14.4,0,27.4-5.6,37.2-14.8l65.3,37.6c-0.7,3.3-1,6.8-1,10.3c0,30,24.4,54.4,54.4,54.4
+                    s54.4-24.3,54.4-54.4c0-12.5-4.3-24-11.4-33.2l99.3-151.8c4.6,1.3,9.5,2,14.5,2c12.6,0,24.2-4.3,33.4-11.5l65.8,44.3L512,160.9
+                    L512,160.9z"/>
             </svg>
-            </span>
-        <strong>GA</strong>
+        </span>
+        <strong>GA4</strong>
         <span class="count">
             <span>{{ collector.count }}</span>
         </span>
@@ -50,34 +56,261 @@
 {% block panel %}
     <h2>GA4 Measurement Protocol</h2>
 
-    <div class="tab-content">
-        <table class="logs" data-filters="">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Uri</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% if collector.data is empty %}
-                <tr>
-                    <td colspan="2" class="text-center">
-                        <strong class="text-bold">
-                            No data for this request
-                        </strong>
-                    </td>
-                </tr>
-            {% else %}
-                {% for key, data in collector.data %}
-                    <tr>
-                        <td class="text-bold">{{ key + 1 }}</td>
-                        <td>
-                            {{ data.uri }}
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
+    {% if collector.data is empty %}
+        <div class="empty">
+            <p>No GA4 requests were sent during this request.</p>
+        </div>
+    {% else %}
+        <div class="metrics">
+            <div class="metric">
+                <span class="value">{{ collector.count }}</span>
+                <span class="label">Total Requests</span>
+            </div>
+
+            <div class="metric">
+                <span class="value">{{ collector.totalEvents }}</span>
+                <span class="label">Total Events</span>
+            </div>
+
+            {% for eventName, count in collector.eventTypes %}
+                <div class="metric">
+                    <span class="value">{{ count }}</span>
+                    <span class="label">{{ eventName }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <h3>Requests</h3>
+
+        <div class="sf-tabs">
+            {% for key, data in collector.data %}
+                {% 
+                    set events_badges = []
+                %}
+                {% if data.parameters.events is defined and data.parameters.events|length > 0 %}
+                    {% for event in data.parameters.events %}
+                        {% set events_badges = events_badges|merge([event.name|default('unknown')]) %}
+                    {% endfor %}
+                {% elseif data.parameters.payload.events is defined %}
+                    {% for event in data.parameters.payload.events %}
+                        {% set events_badges = events_badges|merge([event.name|default('unknown')]) %}
+                    {% endfor %}
+                {% else %}
+                    {% set events_badges = events_badges|merge(['unknown']) %}
+                {% endif %}
+
+                {% 
+                    set status_code = null 
+                %}
+                {% if data.parameters.response.status_code is defined %}
+                    {% set status_code = data.parameters.response.status_code %}
+                {% elseif data.parameters.status_code is defined %}
+                    {% set status_code = data.parameters.status_code %}
+                {% endif %}
+
+                {% 
+                    set status_class = 'bg-secondary' 
+                %}
+                {% if status_code is not null %}
+                    {% if status_code >= 200 and status_code < 300 %}
+                        {% set status_class = 'bg-success' %}
+                    {% elseif status_code >= 400 %}
+                        {% set status_class = 'bg-danger' %}
+                    {% else %}
+                        {% set status_class = 'bg-warning' %}
+                    {% endif %}
+                {% endif %}
+
+                <div class="tab">
+                    <h3 class="tab-title">
+                        Request #{{ key + 1 }}
+                        <span class="badge {{ status_class }}">{{ status_code|default('unknown') }}</span>
+                        {% for event_name in events_badges %}
+                            <span class="badge bg-success">{{ event_name }}</span>
+                        {% endfor %}
+                    </h3>
+
+                    <div class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="badge bg-info">URL:</span>
+                                <code class="text-muted">{{ data.uri }}</code>
+                            </div>
+                            {% if status_code is not null %}
+                            <div>
+                                <span class="badge {{ status_class }}">{{ status_code }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="sf-tabs">
+                            <div class="tab">
+                                <h3 class="tab-title">Payload</h3>
+                                <div class="tab-content">
+                                    {% if data.parameters.payload is defined %}
+                                        <pre class="prewrap">{{ data.parameters.payload|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+                                    {% else %}
+                                        <div class="empty">
+                                            <p>No payload data available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if data.parameters.raw_json is defined %}
+                            <div class="tab">
+                                <h3 class="tab-title">Raw JSON</h3>
+                                <div class="tab-content">
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button class="btn btn-sm btn-secondary copy-button" 
+                                               onclick="navigator.clipboard.writeText(document.getElementById('json-content-{{ key }}').innerText)">
+                                            Copy JSON
+                                        </button>
+                                    </div>
+                                    <pre id="json-content-{{ key }}" class="prewrap">{{ data.parameters.raw_json|raw }}</pre>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if data.parameters.events is defined and data.parameters.events|length > 0 %}
+                            <div class="tab">
+                                <h3 class="tab-title">Events ({{ data.parameters.events|length }})</h3>
+                                <div class="tab-content">
+                                    {% for event in data.parameters.events %}
+                                        <div class="card mb-3">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>Event #{{ event.index + 1 }}</span>
+                                                <span class="badge bg-success">{{ event.name }}</span>
+                                            </div>
+                                            <div class="card-body">
+                                                <pre class="prewrap">{{ event.params|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if data.parameters.response is defined %}
+                            <div class="tab">
+                                <h3 class="tab-title">Response</h3>
+                                <div class="tab-content">
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span>Status Code</span>
+                                            <span class="badge {{ status_class }}">{{ status_code|default('unknown') }}</span>
+                                        </div>
+                                        
+                                        {% if data.parameters.response.headers is defined %}
+                                            <div class="card-body">
+                                                <h4>Headers</h4>
+                                                <pre class="prewrap">{{ data.parameters.response.headers|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if data.parameters.response.content is defined %}
+                                            <div class="card-body">
+                                                <h4>Content</h4>
+                                                <pre class="prewrap">{{ data.parameters.response.content|raw }}</pre>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="tab">
+                                <h3 class="tab-title">Debug</h3>
+                                <div class="tab-content">
+                                    <pre class="prewrap">{{ data.parameters|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <style>
+            .btn.copy-button {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+                margin-bottom: 0.5rem;
+            }
+            .card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                word-wrap: break-word;
+                background-color: #fff;
+                background-clip: border-box;
+                border: 1px solid rgba(0,0,0,.125);
+                border-radius: 0.25rem;
+                margin-bottom: 1rem;
+            }
+            .card-header {
+                padding: 0.75rem 1.25rem;
+                margin-bottom: 0;
+                background-color: rgba(0,0,0,.03);
+                border-bottom: 1px solid rgba(0,0,0,.125);
+            }
+            .card-body {
+                flex: 1 1 auto;
+                min-height: 1px;
+                padding: 1.25rem;
+            }
+            .d-flex {
+                display: flex !important;
+            }
+            .justify-content-between {
+                justify-content: space-between !important;
+            }
+            .justify-content-end {
+                justify-content: flex-end !important;
+            }
+            .align-items-center {
+                align-items: center !important;
+            }
+            .mb-2 {
+                margin-bottom: 0.5rem !important;
+            }
+            .mb-3 {
+                margin-bottom: 1rem !important;
+            }
+            .badge {
+                display: inline-block;
+                padding: 0.25em 0.4em;
+                font-size: 0.75em;
+                font-weight: 700;
+                line-height: 1;
+                text-align: center;
+                white-space: nowrap;
+                vertical-align: baseline;
+                border-radius: 0.25rem;
+                margin-right: 0.25rem;
+                color: #fff;
+            }
+            .bg-success {
+                background-color: #28a745 !important;
+            }
+            .bg-danger {
+                background-color: #dc3545 !important;
+            }
+            .bg-warning {
+                background-color: #ffc107 !important;
+                color: #212529;
+            }
+            .bg-info {
+                background-color: #17a2b8 !important;
+            }
+            .bg-secondary {
+                background-color: #6c757d !important;
+            }
+            .bg-light {
+                background-color: #f8f9fa !important;
+                color: #212529;
+            }
+        </style>
+    {% endif %}
 {% endblock %}

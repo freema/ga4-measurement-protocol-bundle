@@ -38,6 +38,10 @@ class DevKernel extends Kernel
                     'resource' => '%kernel.project_dir%/dev/config/routes.yaml',
                 ],
                 'http_method_override' => false,
+                'session' => [
+                    'enabled' => true,
+                    'storage_factory_id' => 'session.storage.factory.native',
+                ],
             ]);
 
             // Logger configuration removed
@@ -50,6 +54,13 @@ class DevKernel extends Kernel
                 'clients' => [
                     'dev' => [
                         'tracking_id' => 'G-TESTTRACK123',
+                        'api_secret' => 'testsecret123',
+                        'debug_mode' => true,
+                    ],
+                ],
+                'http_client' => [
+                    'config' => [
+                        'timeout' => 5,
                     ],
                 ],
             ]);

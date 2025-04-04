@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Http;
 
-use Psr\Http\Message\ResponseInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 interface HttpClientInterface
 {
     /**
-     * Send a GET request to the specified URL.
+     * Send a GA4 request to the Measurement Protocol API.
      *
-     * @param string $url The URL to request
+     * @param string $measurementId GA4 Measurement ID
+     * @param string $apiSecret     API Secret
+     * @param array  $payload       Request payload
+     * @param bool   $debug         Whether to use debug endpoint
      *
-     * @return ResponseInterface|null The response or null on failure
+     * @return ResponseInterface HTTP client response
      */
-    public function get(string $url): ?ResponseInterface;
+    public function sendGA4Request(string $measurementId, string $apiSecret, array $payload, bool $debug = false): ResponseInterface;
 }

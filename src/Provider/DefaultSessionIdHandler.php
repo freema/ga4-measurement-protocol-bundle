@@ -6,11 +6,22 @@ namespace Freema\GA4MeasurementProtocolBundle\Provider;
 
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class DefaultSessionIdHandler implements SessionIdHandler
+class DefaultSessionIdHandler implements CustomSessionIdHandler
 {
+    private ?string $trackingId = null;
+
     public function __construct(
         private readonly RequestStack $requestStack,
     ) {
+    }
+
+    /**
+     * Set the tracking ID to help find the right GA cookie.
+     */
+    public function setTrackingId(string $trackingId): void
+    {
+        // Remove the 'G-' prefix if present
+        $this->trackingId = str_replace('G-', '', $trackingId);
     }
 
     public function buildSessionId(): ?string
@@ -20,34 +31,29 @@ class DefaultSessionIdHandler implements SessionIdHandler
             return null;
         }
 
-        // Get all cookies
-        $cookies = [];
-        $cookieHeader = $request->headers->get('cookie');
-        if ($cookieHeader) {
-            $cookieParts = explode('; ', $cookieHeader);
-            foreach ($cookieParts as $cookie) {
-                if (false !== strpos($cookie, '=')) {
-                    list($name, $value) = explode('=', $cookie, 2);
-                    $cookies[$name] = $value;
+        // If tracking ID is set, try to find the specific GA cookie for this property
+        if ($this->trackingId) {
+            $gaCookieName = '_ga_'.$this->trackingId;
+            if ($request->cookies->has($gaCookieName)) {
+                $gaCookie = $request->cookies->get($gaCookieName);
+                // GA4 session cookie format is typically GS1.1.1743566249.16.0.1743566249.60.0.181542193
+                // The session ID is the 3rd segment (1743566249 in this example)
+                $gaCookie = (string) $gaCookie;
+                $parts = explode('.', $gaCookie);
+                if (count($parts) >= 3) {
+                    return $parts[2];
                 }
             }
         }
 
-        // Extract client ID from _ga cookie (opravil jsem '_ga' místo '*ga')
-        if (isset($cookies['_ga'])) {
-            $gaCookieValue = $cookies['_ga'];
-            $gaParts = explode('.', $gaCookieValue);
-
-            // Format is GA1.2.XXXXXXXXXX.YYYYYYYYYY
-            if (count($gaParts) >= 4) {
-                return $gaParts[count($gaParts) - 2].'.'.$gaParts[count($gaParts) - 1];
+        // If no specific session cookie found, check for active PHP session
+        if (PHP_SESSION_ACTIVE === session_status()) {
+            $sessionId = session_id();
+            if (false === $sessionId) {
+                return null;
             }
-        }
 
-        // If no _ga cookie or invalid format, fall back to session ID or anonymous ID
-        $sessionId = session_id();
-        if (!empty($sessionId)) {
-            return $sessionId;
+            return '' !== $sessionId ? $sessionId : null;
         }
 
         return null;

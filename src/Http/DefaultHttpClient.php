@@ -4,117 +4,146 @@ declare(strict_types=1);
 
 namespace Freema\GA4MeasurementProtocolBundle\Http;
 
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpClient\Psr18Client;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private Psr18Client $client;
+    private array $httpOptions = [];
 
-    /**
-     * @param array                $config Configuration options for Symfony HTTP client
-     * @param LoggerInterface|null $logger Optional logger
-     */
     public function __construct(
         array $config = [],
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
 
-        // Adjust proxy configuration format for Symfony HTTP client
+        // Convert legacy proxy format to Symfony format if needed
         if (isset($config['proxy']) && is_array($config['proxy'])) {
-            // Convert Guzzle proxy format to Symfony HTTP client format
-            $proxyConfig = $this->convertProxyFormat($config['proxy']);
-            $config['proxy'] = $proxyConfig;
+            $this->convertProxyConfig($config['proxy']);
         }
 
-        // Create Symfony HTTP client with provided config
-        $httpClient = HttpClient::create($config);
+        // Store any other HTTP options
+        if (isset($config['http_options']) && is_array($config['http_options'])) {
+            $this->httpOptions = array_merge($this->httpOptions, $config['http_options']);
+        }
 
-        // Wrap it with PSR-18 adapter for consistent interface
-        $this->client = new Psr18Client($httpClient);
-    }
+        // Apply other standard options
+        if (isset($config['timeout'])) {
+            $this->httpOptions['timeout'] = $config['timeout'];
+        }
 
-    public function get(string $url): ?ResponseInterface
-    {
-        try {
-            if ($this->logger) {
-                $this->logger->debug('Sending GET request', ['url' => $url]);
-            }
-            $response = $this->client->sendRequest(
-                $this->client->createRequest('GET', $url)
-            );
-
-            if ($this->logger) {
-                $this->logger->debug('Request successful', [
-                    'status_code' => $response->getStatusCode(),
-                    'url' => $url,
-                ]);
-            }
-
-            return $response;
-        } catch (ExceptionInterface|ClientExceptionInterface $e) {
-            if ($this->logger) {
-                $this->logger->error('Failed to send GET request', [
-                    'exception' => $e,
-                    'message' => $e->getMessage(),
-                    'url' => $url,
-                ]);
-            }
-
-            return null;
+        if (isset($config['max_redirects'])) {
+            $this->httpOptions['max_redirects'] = $config['max_redirects'];
         }
     }
 
     /**
-     * Convert Guzzle proxy format to Symfony HTTP client format.
-     *
-     * Guzzle format:
-     * [
-     *    'http' => 'proxy.example.com:3128',
-     *    'https' => 'proxy.example.com:3128',
-     *    'no' => ['localhost', '.example.com']
-     * ]
-     *
-     * Symfony format:
-     * 'http://proxy.example.com:3128' or ['http://user:pass@proxy.example.com:3128']
-     *
-     * @param array $proxyConfig Proxy configuration in Guzzle format
-     *
-     * @return string|null Proxy URL in Symfony format
+     * Convert from legacy proxy array format to Symfony HttpClient format.
      */
-    private function convertProxyFormat(array $proxyConfig): ?string
+    private function convertProxyConfig(array $proxyConfig): void
     {
-        // If http proxy is defined, use it
-        if (isset($proxyConfig['http']) && is_string($proxyConfig['http'])) {
-            // Make sure the URL has the protocol
-            if (!str_starts_with($proxyConfig['http'], 'http://')) {
-                return 'http://'.$proxyConfig['http'];
-            }
-
-            return $proxyConfig['http'];
+        // Symfony format is a single string URL for proxy
+        if (isset($proxyConfig['http'])) {
+            $this->httpOptions['proxy'] = $proxyConfig['http'];
+        } elseif (isset($proxyConfig['https'])) {
+            $this->httpOptions['proxy'] = $proxyConfig['https'];
         }
 
-        // If https proxy is defined, use it
-        if (isset($proxyConfig['https']) && is_string($proxyConfig['https'])) {
-            // Make sure the URL has the protocol
-            if (!str_starts_with($proxyConfig['https'], 'http')) {
-                return 'http://'.$proxyConfig['https'];
-            }
+        // Convert no_proxy array to comma-separated string
+        if (isset($proxyConfig['no']) && is_array($proxyConfig['no'])) {
+            $this->httpOptions['no_proxy'] = implode(',', $proxyConfig['no']);
+        }
+    }
 
-            return $proxyConfig['https'];
+    public function sendGA4Request(string $measurementId, string $apiSecret, array $payload, bool $debug = false): ResponseInterface
+    {
+        try {
+            $this->logger?->debug('Sending GA4 request', [
+                'measurement_id' => $measurementId,
+                'debug' => $debug,
+            ]);
+
+            // Create HTTP client
+            $client = HttpClient::create($this->httpOptions);
+
+            // Build the URL
+            $url = sprintf(
+                'https://www.google-analytics.com/%smp/collect?measurement_id=%s&api_secret=%s',
+                $debug ? 'debug/' : '',
+                $measurementId,
+                $apiSecret
+            );
+
+            // Send the request
+            $response = $client->request('POST', $url, [
+                'json' => $payload,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $this->logger?->debug('GA4 response', [
+                'status_code' => $response->getStatusCode(),
+            ]);
+
+            return $response;
+        } catch (\Throwable $e) {
+            $this->logger?->error('Failed to send GA4 request', [
+                'exception' => $e,
+                'message' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Set HTTP client options.
+     */
+    public function setHttpOptions(array $options): self
+    {
+        $this->httpOptions = $options;
+
+        return $this;
+    }
+
+    /**
+     * Add HTTP client options.
+     */
+    public function addHttpOptions(array $options): self
+    {
+        $this->httpOptions = array_merge($this->httpOptions, $options);
+
+        return $this;
+    }
+
+    /**
+     * Set proxy URL in Symfony format.
+     */
+    public function setProxy(string $proxyUrl): self
+    {
+        $this->httpOptions['proxy'] = $proxyUrl;
+
+        return $this;
+    }
+
+    /**
+     * Set domains to exclude from proxy.
+     */
+    public function setNoProxy(array|string $domains): self
+    {
+        if (is_array($domains)) {
+            $this->httpOptions['no_proxy'] = implode(',', $domains);
+        } else {
+            $this->httpOptions['no_proxy'] = $domains;
         }
 
-        // No proxy defined
-        return null;
+        return $this;
     }
 }

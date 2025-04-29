@@ -27,10 +27,45 @@ final class AnalyticsUrl
     {
         $this->url = $url;
         $this->parameters = $data['payload'] ?? $data;
-        $this->events = $data['events'] ?? null;
-        $this->response = $data['response'] ?? null;
-        $this->rawJson = $data['raw_json'] ?? null;
-        $this->debugInfo = $data['debug_info'] ?? null;
+        $this->events = isset($data['events']) && is_array($data['events']) ? $data['events'] : null;
+        $this->response = isset($data['response']) && is_array($data['response']) ? $data['response'] : null;
+        $this->rawJson = isset($data['raw_json']) && is_string($data['raw_json']) ? $data['raw_json'] : null;
+
+        // Handle debugInfo with proper type checking for PHPStan
+        $this->debugInfo = $this->processDebugInfo($data['debug_info'] ?? null);
+    }
+
+    /**
+     * Process debug_info data with proper type handling.
+     *
+     * @param mixed $debugInfo The debug info data to process
+     *
+     * @return array|null Properly typed debug info data
+     */
+    private function processDebugInfo($debugInfo): ?array
+    {
+        if (null === $debugInfo) {
+            return null;
+        }
+
+        if (is_array($debugInfo)) {
+            return $debugInfo;
+        }
+
+        if (is_string($debugInfo)) {
+            $decoded = json_decode($debugInfo, true);
+            if (JSON_ERROR_NONE === json_last_error() && is_array($decoded)) {
+                return $decoded;
+            }
+
+            return ['message' => $debugInfo];
+        }
+
+        // For any other type, create an array representation
+        return [
+            'value' => $debugInfo,
+            'type' => gettype($debugInfo),
+        ];
     }
 
     /**
@@ -65,9 +100,9 @@ final class AnalyticsUrl
     public function getEventNames(): array
     {
         if (!$this->events) {
-            if (isset($this->parameters['events'])) {
+            if (isset($this->parameters['events']) && is_array($this->parameters['events'])) {
                 return array_map(function ($event) {
-                    return $event['name'] ?? 'unknown';
+                    return is_array($event) && isset($event['name']) ? (string) $event['name'] : 'unknown';
                 }, $this->parameters['events']);
             }
 
@@ -75,7 +110,7 @@ final class AnalyticsUrl
         }
 
         return array_map(function ($event) {
-            return $event['name'] ?? 'unknown';
+            return is_array($event) && isset($event['name']) ? (string) $event['name'] : 'unknown';
         }, $this->events);
     }
 
@@ -100,7 +135,13 @@ final class AnalyticsUrl
      */
     public function getStatusCode(): ?int
     {
-        return $this->response['status_code'] ?? null;
+        if (null === $this->response || !isset($this->response['status_code'])) {
+            return null;
+        }
+
+        $statusCode = $this->response['status_code'];
+
+        return is_int($statusCode) ? $statusCode : (int) $statusCode;
     }
 
     /**
@@ -108,7 +149,13 @@ final class AnalyticsUrl
      */
     public function getResponseContent(): ?string
     {
-        return $this->response['content'] ?? null;
+        if (null === $this->response || !isset($this->response['content'])) {
+            return null;
+        }
+
+        $content = $this->response['content'];
+
+        return is_string($content) ? $content : (string) $content;
     }
 
     /**
@@ -138,7 +185,7 @@ final class AnalyticsUrl
             return count($this->events);
         }
 
-        if (isset($this->parameters['events'])) {
+        if (isset($this->parameters['events']) && is_array($this->parameters['events'])) {
             return count($this->parameters['events']);
         }
 
@@ -150,7 +197,20 @@ final class AnalyticsUrl
      */
     public function getClientId(): ?string
     {
-        return $this->parameters['client_id'] ?? ($this->debugInfo['client_id'] ?? null);
+        if (isset($this->parameters['client_id'])) {
+            $clientId = $this->parameters['client_id'];
+
+            return is_string($clientId) ? $clientId : (string) $clientId;
+        }
+
+        if (null !== $this->debugInfo && isset($this->debugInfo['client_id'])) {
+            // Ensure that the returned value is a string
+            $clientId = $this->debugInfo['client_id'];
+
+            return is_string($clientId) ? $clientId : (string) $clientId;
+        }
+
+        return null;
     }
 
     /**
@@ -158,11 +218,17 @@ final class AnalyticsUrl
      */
     public function getValidationErrors(): array
     {
-        if (isset($this->debugInfo['validation_errors'])) {
-            return $this->debugInfo['validation_errors'];
+        if (null === $this->debugInfo || !isset($this->debugInfo['validation_errors'])) {
+            return [];
         }
 
-        return [];
+        $errors = $this->debugInfo['validation_errors'];
+
+        if (is_array($errors)) {
+            return $errors;
+        }
+
+        return [$errors];
     }
 
     /**

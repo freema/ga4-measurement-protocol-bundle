@@ -1,5 +1,12 @@
 # Google Analytics 4 Measurement Protocol Bundle
 
+![CI](https://github.com/freema/ga4-measurement-protocol-bundle/workflows/CI/badge.svg)
+![Coverage](https://codecov.io/gh/freema/ga4-measurement-protocol-bundle/branch/main/graph/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-5.4%2B-000000?logo=symfony&logoColor=white)
+![code style: prettier](https://img.shields.io/badge/code_style-PSR--12-ff69b4.svg)
+
 This bundle provides a clean, object-oriented integration with Google Analytics 4 Measurement Protocol for Symfony applications. It uses an event-based approach to track page views, purchases, and custom events in GA4.
 
 ## Requirements

@@ -36,13 +36,39 @@ class DefaultSessionIdHandler implements CustomSessionIdHandler
             $gaCookieName = '_ga_'.$this->trackingId;
             if ($request->cookies->has($gaCookieName)) {
                 $gaCookie = $request->cookies->get($gaCookieName);
-                // GA4 session cookie format is typically GS1.1.1743566249.16.0.1743566249.60.0.181542193
-                // The session ID is the 3rd segment (1743566249 in this example)
                 $gaCookie = (string) $gaCookie;
+
+                // The cookie value gets transformed by PHP/Symfony in some environments
+                // Original format: GS1.1.1757570945.16.0.1757570945.60.0.181542193
+                // PHP may see: GS2.1.s1757570945$o1$g0$t1757570949$j56$l0$h1734790078
+                // The session ID is prefixed with 's' and followed by '$' in transformed format
+
+                // First, try to extract session ID from transformed format (s prefix pattern)
+                if (preg_match('/s(\d+)\$/', $gaCookie, $matches)) {
+                    // Return just the numeric session ID without the 's' prefix
+                    return $matches[1];
+                }
+
+                // Try standard GA4 format parsing
                 $parts = explode('.', $gaCookie);
                 if (count($parts) >= 3) {
-                    return $parts[2];
+                    // Check if third part starts with 's' and extract number
+                    if (preg_match('/^s(\d+)/', $parts[2], $matches)) {
+                        return $matches[1];
+                    }
+                    // Return as-is if it's already a number (standard format)
+                    if (is_numeric($parts[2])) {
+                        return $parts[2];
+                    }
                 }
+            }
+        }
+
+        // Fallback: try to get session_id from _ga_session cookie if exists
+        if ($request->cookies->has('_ga_session')) {
+            $sessionIdValue = $request->cookies->get('_ga_session');
+            if (!empty($sessionIdValue)) {
+                return (string) $sessionIdValue;
             }
         }
 

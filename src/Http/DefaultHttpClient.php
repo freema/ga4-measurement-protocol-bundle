@@ -9,13 +9,21 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\HttpClientInterface as SymfonyHttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private array $httpOptions = [];
+    /**
+     * Seconds to wait for Google before giving up. Events are sent during
+     * the request that triggers them, so an outage must not stall a page for
+     * PHP's default_socket_timeout (60 s). Override with the `timeout` option.
+     */
+    public const DEFAULT_TIMEOUT = 5.0;
+
+    private array $httpOptions = ['timeout' => self::DEFAULT_TIMEOUT];
 
     public function __construct(
         array $config = [],
@@ -23,9 +31,16 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
     ) {
         $this->logger = $logger ?? new NullLogger();
 
-        // Convert legacy proxy format to Symfony format if needed
+        // Proxy: a URL string (Symfony format) or the legacy
+        // ['http' => …, 'https' => …, 'no' => […]] array
         if (isset($config['proxy']) && is_array($config['proxy'])) {
             $this->convertProxyConfig($config['proxy']);
+        } elseif (isset($config['proxy']) && is_string($config['proxy']) && '' !== $config['proxy']) {
+            $this->httpOptions['proxy'] = $config['proxy'];
+        }
+
+        if (isset($config['no_proxy']) && (is_array($config['no_proxy']) || is_string($config['no_proxy']))) {
+            $this->setNoProxy($config['no_proxy']);
         }
 
         // Store any other HTTP options
@@ -69,8 +84,7 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
                 'debug' => $debug,
             ]);
 
-            // Create HTTP client
-            $client = HttpClient::create($this->httpOptions);
+            $client = $this->createHttpClient();
 
             // Build the URL
             $url = sprintf(
@@ -94,13 +108,23 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
 
             return $response;
         } catch (\Throwable $e) {
-            $this->logger?->error('Failed to send GA4 request', [
-                'exception' => $e,
-                'message' => $e->getMessage(),
-            ]);
+            $this->logger?->error('Failed to send GA4 request', SecretRedactor::logContext($e, $apiSecret));
 
             throw $e;
         }
+    }
+
+    protected function createHttpClient(): SymfonyHttpClientInterface
+    {
+        return HttpClient::create($this->httpOptions);
+    }
+
+    /**
+     * The options every request is sent with.
+     */
+    public function getHttpOptions(): array
+    {
+        return $this->httpOptions;
     }
 
     /**

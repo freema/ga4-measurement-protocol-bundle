@@ -10,6 +10,7 @@ use Freema\GA4MeasurementProtocolBundle\Event\EventInterface;
 use Freema\GA4MeasurementProtocolBundle\Exception\ClientIdException;
 use Freema\GA4MeasurementProtocolBundle\Exception\ValidationException;
 use Freema\GA4MeasurementProtocolBundle\Http\HttpClientInterface;
+use Freema\GA4MeasurementProtocolBundle\Http\SecretRedactor;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomClientIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomSessionIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomUserIdHandler;
@@ -312,9 +313,10 @@ class AnalyticsClient implements AnalyticsClientInterface
                 'content' => $response->getContent(),
             ];
 
-            // Generate URL and dispatch event for data collector
+            // Generate URL and dispatch event for data collector (the
+            // profiler stores it, so without the secret)
             $url = $this->getRequestUrl();
-            $this->eventDispatcher->dispatch(new AnalyticsRequest($url, $debugPayload));
+            $this->eventDispatcher->dispatch(new AnalyticsRequest(SecretRedactor::redact($url, $this->apiSecret), $debugPayload));
 
             // Store the debug payload for the last request
             $this->lastSentParameters = $debugPayload;
@@ -325,14 +327,12 @@ class AnalyticsClient implements AnalyticsClientInterface
             // Return enhanced analytics URL object with all the details
             return new AnalyticsUrl($url, $debugPayload);
         } catch (\Throwable $e) {
-            $this->logger->error('Error sending GA4 request', [
-                'error' => $e->getMessage(),
-                'exception' => $e,
-            ]);
+            // HTTP client errors quote the request URL, api_secret included
+            $this->logger->error('Error sending GA4 request', SecretRedactor::logContext($e, $this->apiSecret));
 
             // Create analytics URL with error information
             $errorPayload = [
-                'error' => $e->getMessage(),
+                'error' => SecretRedactor::redact($e->getMessage(), $this->apiSecret),
                 'debug_info' => [
                     'exception_class' => get_class($e),
                     'timestamp' => new \DateTimeImmutable(),

@@ -14,9 +14,11 @@ use Freema\GA4MeasurementProtocolBundle\Http\HttpClientInterface;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomClientIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomSessionIdHandler;
 use Freema\GA4MeasurementProtocolBundle\Provider\CustomUserIdHandler;
+use Freema\GA4MeasurementProtocolBundle\Tests\Support\RecordingLogger;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -197,4 +199,34 @@ class AnalyticsClientTest extends TestCase
     }
 
     // Test removed because session handling was implemented differently in the actual code
+
+    public function testAFailedSendDoesNotLogTheSecret(): void
+    {
+        $logger = new RecordingLogger();
+        $client = new AnalyticsClient(
+            $this->httpClient,
+            $this->eventDispatcher,
+            $this->requestStack,
+            $this->clientIdHandler,
+            $this->userIdHandler,
+            $this->sessionIdHandler,
+            $logger,
+            'G-TEST123',
+            'secret456'
+        );
+        $this->clientIdHandler->method('buildClientId')->willReturn('test-client-id');
+        // What Symfony's HTTP client throws when Google is unreachable
+        $this->httpClient->method('sendGA4Request')->willThrowException(new TransportException(
+            'Idle timeout reached for "https://www.google-analytics.com/mp/collect?measurement_id=G-TEST123&api_secret=secret456".'
+        ));
+        $event = $this->createMock(EventInterface::class);
+        $event->method('getName')->willReturn('test_event');
+        $event->method('getParameters')->willReturn([]);
+
+        $result = $client->addEvent($event)->send();
+
+        $this->assertStringNotContainsString('secret456', $logger->dump());
+        $this->assertStringContainsString('Idle timeout reached', $logger->dump());
+        $this->assertStringNotContainsString('secret456', (string) json_encode($result->getParameters()));
+    }
 }

@@ -54,8 +54,12 @@ ga4_measurement_protocol:
             proxy: 'http://proxy.example.com:3128'
             no_proxy: ['localhost', '.example.com']
             # Other HTTP client options
-            timeout: 5.0
+            timeout: 5.0          # seconds; 5.0 is also the default
             max_redirects: 5
+    
+    # Shortcut for the proxy, used when http_client.config sets none
+    proxy: 'http://proxy.example.com:3128'
+    no_proxy: ['localhost', '.example.com']
     
     # Required: Define your analytics clients
     clients:
@@ -77,6 +81,12 @@ ga4_measurement_protocol:
             custom_user_id_handler: 'App\Handler\MyUserIdHandler'
             custom_session_id_handler: 'App\Handler\MySessionIdHandler'
 ```
+
+Events are sent during the request that triggers them, so requests to
+Google time out after 5 seconds by default instead of PHP's
+`default_socket_timeout` (60 s). A failed request is logged without the
+`api_secret`: the Measurement Protocol takes it as a query parameter, and
+HTTP client errors quote the full URL.
 
 ## Using the Bundle
 

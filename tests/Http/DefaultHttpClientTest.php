@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Freema\GA4MeasurementProtocolBundle\Tests\Http;
 
 use Freema\GA4MeasurementProtocolBundle\Http\DefaultHttpClient;
+use Freema\GA4MeasurementProtocolBundle\Tests\Support\RecordingLogger;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -133,5 +135,55 @@ class DefaultHttpClientTest extends TestCase
         $this->assertEquals(10, $options['timeout']);
         $this->assertEquals(5, $options['max_redirects']);
         $this->assertEquals('http://proxy.example.com', $options['proxy']);
+        $this->assertEquals('localhost,127.0.0.1', $options['no_proxy']);
+    }
+
+    public function testProxyGivenAsUrl(): void
+    {
+        // The format the README documents
+        $client = new DefaultHttpClient([
+            'proxy' => 'http://proxy.example.com:3128',
+            'no_proxy' => ['localhost', '.example.com'],
+        ]);
+
+        $options = $client->getHttpOptions();
+        $this->assertSame('http://proxy.example.com:3128', $options['proxy']);
+        $this->assertSame('localhost,.example.com', $options['no_proxy']);
+    }
+
+    public function testRequestsHaveATimeoutByDefault(): void
+    {
+        $this->assertSame(DefaultHttpClient::DEFAULT_TIMEOUT, (new DefaultHttpClient())->getHttpOptions()['timeout']);
+        $this->assertSame(2, (new DefaultHttpClient(['timeout' => 2]))->getHttpOptions()['timeout']);
+    }
+
+    public function testAFailedRequestDoesNotLogTheSecret(): void
+    {
+        // Symfony's HTTP client quotes the full URL in its errors
+        $failing = new MockHttpClient(static function (string $method, string $url): never {
+            throw new TransportException(sprintf('Failed to connect to proxy for "%s".', $url));
+        });
+        $logger = new RecordingLogger();
+        $client = new class ($failing, $logger) extends DefaultHttpClient {
+            public function __construct(private readonly MockHttpClient $mock, RecordingLogger $logger)
+            {
+                parent::__construct([], $logger);
+            }
+
+            protected function createHttpClient(): \Symfony\Contracts\HttpClient\HttpClientInterface
+            {
+                return $this->mock;
+            }
+        };
+
+        try {
+            $client->sendGA4Request('G-TEST123', 'TOPSECRET42', ['client_id' => '1.2', 'events' => []]);
+            $this->fail('the transport error was swallowed');
+        } catch (TransportException) {
+        }
+
+        $this->assertNotEmpty($logger->records);
+        $this->assertStringNotContainsString('TOPSECRET42', $logger->dump());
+        $this->assertStringContainsString('api_secret=***', $logger->dump());
     }
 }

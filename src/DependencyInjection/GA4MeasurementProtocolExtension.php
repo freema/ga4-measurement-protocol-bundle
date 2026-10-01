@@ -119,6 +119,15 @@ class GA4MeasurementProtocolExtension extends Extension
         $httpClientConfig = $config['http_client'] ?? [];
         $httpClientConfigOptions = $httpClientConfig['config'] ?? [];
 
+        // The top-level proxy and no_proxy options apply unless
+        // http_client.config sets its own
+        if (!empty($config['proxy']) && !isset($httpClientConfigOptions['proxy'])) {
+            $httpClientConfigOptions['proxy'] = $config['proxy'];
+        }
+        if (!empty($config['no_proxy']) && !isset($httpClientConfigOptions['no_proxy'])) {
+            $httpClientConfigOptions['no_proxy'] = $config['no_proxy'];
+        }
+
         // Register HTTP client
         $container
             ->setDefinition('ga4_measurement_protocol.http_client', new Definition(DefaultHttpClient::class))

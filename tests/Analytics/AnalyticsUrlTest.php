@@ -158,7 +158,6 @@ class AnalyticsUrlTest extends TestCase
         // Use reflection to check property types
         $reflection = new \ReflectionClass($analyticsUrl);
         $debugInfoProperty = $reflection->getProperty('debugInfo');
-        $debugInfoProperty->setAccessible(true);
         $debugInfoValue = $debugInfoProperty->getValue($analyticsUrl);
 
         // Assert that debugInfo is an array, as required

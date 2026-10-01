@@ -2,109 +2,100 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  php-cs-fixer:
-    name: PHP-CS-Fixer
+  quality:
+    name: Code style and static analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          tools: php-cs-fixer:3.14
-
-      - name: Check code style
-        run: php-cs-fixer fix --dry-run --diff
-
-  phpstan:
-    name: PHPStan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
           coverage: none
 
-      - name: Install composer dependencies
-        run: |
-          composer config --no-plugins allow-plugins.php-http/discovery true
-          composer install --no-interaction --no-progress
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
-      - name: Verify phpstan.neon exists
-        run: |
-          if [ ! -f phpstan.neon ]; then
-            echo "phpstan.neon does not exist!"
-            exit 1
-          fi
-          cat phpstan.neon
+      - uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-quality-${{ hashFiles('composer.json') }}
+          restore-keys: composer-quality-
 
-      - name: Run PHPStan
-        run: vendor/bin/phpstan analyse src -c phpstan.neon
+      - name: Install dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: PHP-CS-Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress
 
   tests:
-    name: Tests (PHP ${{ matrix.php-version }}, Symfony ${{ matrix.symfony-version }})
+    name: PHP ${{ matrix.php }}, Symfony ${{ matrix.symfony }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - php-version: '8.1'
-            symfony-version: '5.4'
-            test-directory: 'test/symfony54'
-          - php-version: '8.1'
-            symfony-version: '6.4'
-            test-directory: 'test/symfony64'
-          - php-version: '8.2'
-            symfony-version: '7.1'
-            test-directory: 'test/symfony71'
-          - php-version: '8.4'
-            symfony-version: '8.0'
-            test-directory: 'test/symfony80'
-
+          - php: '8.1'
+            symfony: '5.4.*'
+          - php: '8.2'
+            symfony: '6.4.*'
+          - php: '8.3'
+            symfony: '7.4.*'
+          - php: '8.4'
+            symfony: '8.*'
+            coverage: true
+          - php: '8.5'
+            symfony: '8.*'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
-          coverage: pcov
+          php-version: ${{ matrix.php }}
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
+          tools: flex
 
-      - name: Get composer cache directory
+      - name: Get Composer cache directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache composer dependencies
-        uses: actions/cache@v3
+      - uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: composer-php${{ matrix.php }}-sf${{ matrix.symfony }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-php${{ matrix.php }}-sf${{ matrix.symfony }}-
 
-      - name: Prepare test environment
-        run: |
-          rm -rf .symfony-test
-          mkdir -p .symfony-test/vendor
-          cp -r src .symfony-test/
-          cp -r tests .symfony-test/
-          cp phpunit.xml.dist .symfony-test/phpunit.xml
-          cp ${{ matrix.test-directory }}/composer.json .symfony-test/composer.json
+      - name: Install dependencies
+        env:
+          SYMFONY_REQUIRE: ${{ matrix.symfony }}
+        run: composer update --no-interaction --no-progress --prefer-dist
 
-      - name: Install test dependencies
-        working-directory: .symfony-test
-        run: |
-          composer config --no-plugins allow-plugins.php-http/discovery true
-          composer install --no-interaction --no-progress
-
-      - name: Run tests
-        working-directory: .symfony-test
+      - name: PHPUnit
+        if: ${{ !matrix.coverage }}
         run: vendor/bin/phpunit
+
+      - name: PHPUnit with coverage
+        if: ${{ matrix.coverage }}
+        run: vendor/bin/phpunit --coverage-filter src --coverage-clover coverage.xml
+
+      - uses: codecov/codecov-action@v7
+        if: ${{ matrix.coverage }}
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false

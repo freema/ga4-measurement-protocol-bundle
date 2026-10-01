@@ -54,7 +54,6 @@ class AnalyticsRegistryTest extends TestCase
         // Using reflection to replace the create method for testing
         $reflection = new \ReflectionClass(AnalyticsRegistry::class);
         $clientsProperty = $reflection->getProperty('clients');
-        $clientsProperty->setAccessible(true);
         $clients = [];
         $clients['test_client'] = $this->analyticsClient;
         $clientsProperty->setValue($this->registry, $clients);
@@ -104,7 +103,6 @@ class AnalyticsRegistryTest extends TestCase
         // Using reflection to verify the client creation
         $reflection = new \ReflectionClass(AnalyticsRegistry::class);
         $clientsProperty = $reflection->getProperty('clients');
-        $clientsProperty->setAccessible(true);
         $clients = [];
         $clients['custom_handlers'] = $this->analyticsClient;
         $clientsProperty->setValue($registry, $clients);

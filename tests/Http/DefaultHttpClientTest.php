@@ -7,7 +7,6 @@ namespace Freema\GA4MeasurementProtocolBundle\Tests\Http;
 use Freema\GA4MeasurementProtocolBundle\Http\DefaultHttpClient;
 use Freema\GA4MeasurementProtocolBundle\Tests\Support\RecordingLogger;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -24,14 +23,6 @@ class DefaultHttpClientTest extends TestCase
         ]);
 
         $mockHttpClient = new MockHttpClient($mockResponse);
-
-        // Create the client with our mock
-        $client = new DefaultHttpClient([], new NullLogger());
-
-        // Use reflection to replace the HttpClient creation
-        $reflection = new \ReflectionClass(DefaultHttpClient::class);
-        $httpOptionsProperty = $reflection->getProperty('httpOptions');
-        $httpOptionsProperty->setAccessible(true);
 
         // Mock the request
         $measurementId = 'G-TEST123';
@@ -125,12 +116,7 @@ class DefaultHttpClientTest extends TestCase
             ],
         ]);
 
-        // Use reflection to check if options were set correctly
-        $reflection = new \ReflectionClass(DefaultHttpClient::class);
-        $httpOptionsProperty = $reflection->getProperty('httpOptions');
-        $httpOptionsProperty->setAccessible(true);
-
-        $options = $httpOptionsProperty->getValue($client);
+        $options = $client->getHttpOptions();
 
         $this->assertEquals(10, $options['timeout']);
         $this->assertEquals(5, $options['max_redirects']);

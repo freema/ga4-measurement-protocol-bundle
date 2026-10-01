@@ -66,6 +66,9 @@ jobs:
           - php-version: '8.2'
             symfony-version: '7.1'
             test-directory: 'test/symfony71'
+          - php-version: '8.4'
+            symfony-version: '8.0'
+            test-directory: 'test/symfony80'
 
     steps:
       - uses: actions/checkout@v3

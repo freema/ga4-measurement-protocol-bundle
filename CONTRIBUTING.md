@@ -90,9 +90,10 @@ task test:all
 task test:symfony54
 task test:symfony64
 task test:symfony71  # Requires PHP 8.2+
+task test:symfony80  # Requires PHP 8.4+
 ```
 
-Note: Testing with Symfony 7.1 requires PHP 8.2 or higher. The main bundle is compatible with PHP 8.1 using Symfony 5.4 or 6.4.
+Note: Testing with Symfony 7.1 requires PHP 8.2 or higher, and Symfony 8.0 requires PHP 8.4 or higher (the Docker image ships PHP 8.2, so `test:all` leaves 8.0 to CI). The main bundle is compatible with PHP 8.1 using Symfony 5.4 or 6.4.
 
 ## Coding Standards
 

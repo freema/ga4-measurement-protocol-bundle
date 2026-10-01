@@ -102,6 +102,15 @@ tasks:
       - docker exec -it {{ .CONTAINER_NAME }} sh -c "cd /code/{{ .TEST_DIR }} && vendor/bin/phpunit"
     aliases: ['t:71']
 
+  test:symfony80:
+    desc: 'Test with Symfony 8.0 (requires PHP 8.4+)'
+    cmds:
+      - task: test:prepare
+      - cp test/symfony80/composer.json {{ .TEST_DIR }}/composer.json
+      - docker exec -it {{ .CONTAINER_NAME }} sh -c "cd /code/{{ .TEST_DIR }} && composer install --no-interaction"
+      - docker exec -it {{ .CONTAINER_NAME }} sh -c "cd /code/{{ .TEST_DIR }} && vendor/bin/phpunit"
+    aliases: ['t:80']
+
   test:all:
     desc: 'Test with all Symfony versions'
     cmds:

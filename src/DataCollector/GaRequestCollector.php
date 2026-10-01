@@ -17,7 +17,7 @@ class GaRequestCollector extends DataCollector implements EventSubscriberInterfa
      */
     private array $requestStore = [];
 
-    public function collect(Request $request, Response $response, ?\Throwable $exception = null)
+    public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
         $this->data = [];
 
@@ -40,7 +40,7 @@ class GaRequestCollector extends DataCollector implements EventSubscriberInterfa
         return 'ga';
     }
 
-    public function reset()
+    public function reset(): void
     {
         $this->data = [];
         $this->requestStore = [];

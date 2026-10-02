@@ -87,13 +87,13 @@ This bundle supports multiple Symfony versions. Please test your changes across 
 task test:all
 
 # Run tests for specific Symfony versions
-task test:symfony54
-task test:symfony64
-task test:symfony71  # Requires PHP 8.2+
-task test:symfony80  # Requires PHP 8.4+
+task test:symfony54  # PHP 8.1
+task test:symfony64  # PHP 8.2
+task test:symfony74  # PHP 8.3
+task test:symfony8   # PHP 8.5
 ```
 
-Note: Testing with Symfony 7.1 requires PHP 8.2 or higher, and Symfony 8.0 requires PHP 8.4 or higher (the Docker image ships PHP 8.2, so `test:all` leaves 8.0 to CI). The main bundle is compatible with PHP 8.1 using Symfony 5.4 or 6.4.
+These tasks run the same PHP / Symfony pairs as CI. Each one starts throwaway `composer:2` and `php:<version>-cli` containers (no `task up` needed): Composer resolves the dependencies for that PHP version, Symfony Flex pins the Symfony version through `SYMFONY_REQUIRE`, and PHPUnit runs on that PHP version.
 
 ## Coding Standards
 

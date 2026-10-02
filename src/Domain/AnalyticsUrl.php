@@ -101,17 +101,22 @@ final class AnalyticsUrl
     {
         if (!$this->events) {
             if (isset($this->parameters['events']) && is_array($this->parameters['events'])) {
-                return array_map(function ($event) {
-                    return is_array($event) && isset($event['name']) ? (string) $event['name'] : 'unknown';
-                }, $this->parameters['events']);
+                return array_map(self::eventName(...), $this->parameters['events']);
             }
 
             return [];
         }
 
-        return array_map(function ($event) {
-            return is_array($event) && isset($event['name']) ? (string) $event['name'] : 'unknown';
-        }, $this->events);
+        return array_map(self::eventName(...), $this->events);
+    }
+
+    private static function eventName(mixed $event): string
+    {
+        if (!is_array($event) || !isset($event['name'])) {
+            return 'unknown';
+        }
+
+        return is_scalar($event['name']) || $event['name'] instanceof \Stringable ? (string) $event['name'] : 'unknown';
     }
 
     /**

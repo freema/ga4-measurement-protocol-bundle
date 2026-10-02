@@ -95,13 +95,13 @@ class GaRequestCollector extends DataCollector implements EventSubscriberInterfa
             // Try to extract event names from various places
             if (isset($requestData['parameters']['events']) && is_array($requestData['parameters']['events'])) {
                 foreach ($requestData['parameters']['events'] as $event) {
-                    if (isset($event['name'])) {
+                    if (is_array($event) && isset($event['name'])) {
                         $eventNames[] = $event['name'];
                     }
                 }
             } elseif (isset($requestData['parameters']['payload']['events'])) {
                 foreach ($requestData['parameters']['payload']['events'] as $event) {
-                    if (isset($event['name'])) {
+                    if (is_array($event) && isset($event['name'])) {
                         $eventNames[] = $event['name'];
                     }
                 }

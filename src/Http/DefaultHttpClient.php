@@ -72,7 +72,7 @@ class DefaultHttpClient implements HttpClientInterface, LoggerAwareInterface
 
         // Convert no_proxy array to comma-separated string
         if (isset($proxyConfig['no']) && is_array($proxyConfig['no'])) {
-            $this->httpOptions['no_proxy'] = implode(',', $proxyConfig['no']);
+            $this->setNoProxy($proxyConfig['no']);
         }
     }
 

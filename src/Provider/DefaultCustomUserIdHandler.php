@@ -20,13 +20,17 @@ class DefaultCustomUserIdHandler implements CustomUserIdHandler
             return null;
         }
 
-        // Try to get user ID from session
+        // getSession() throws on a request without a session (stateless
+        // routes, API calls), which would make send() fail
+        if (!$request->hasSession()) {
+            return null;
+        }
+
         $session = $request->getSession();
-        if (null !== $session && $session->has('user_id')) {
+        if ($session->has('user_id')) {
             $userId = $session->get('user_id');
 
-            /* @phpstan-ignore-next-line */
-            return is_string($userId) ? $userId : (string) $userId;
+            return is_scalar($userId) || $userId instanceof \Stringable ? (string) $userId : null;
         }
 
         // If no user ID is available, return null
